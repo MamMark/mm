@@ -1,6 +1,6 @@
 /* tos/chips/mems/tests/MemsTestP.nc
  *
- * Copyright (c) 2019 Eric B. Decker
+ * Copyright (c) 2019, 2021 Eric B. Decker
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,162 +33,91 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- * USE_FIFO enables using the Fifos for Gyro and Accel
- */
+#include <lsm6dsox.h>
+#include <regime_ids.h>
+#include <sensor_config.h>
 
-#include <lisxdh.h>
+#ifndef PANIC_SNS
+enum {
+  __pcode_sns = unique(UQ_PANIC_SUBSYS)
+};
 
-#define USE_FIFO
-#define DUMP_SIZE 256
+#define PANIC_SNS __pcode_sns
+#endif
 
-typedef struct {
-  uint8_t r1;
-  uint8_t r4;
-  uint8_t r5;
-  uint8_t status;
-  uint8_t fifo_ctrl;
-  uint8_t fifo_src;
-} regdump_t;
+#define MEMS_BUF_SIZE (1024)
 
-uint32_t  reg_idx;
-regdump_t regdump[DUMP_SIZE];
-
+uint8_t mems_buf[MEMS_BUF_SIZE];
+sensor_config_t cfgX[3];
+uint16_t lenX;
 
 module MemsTestP {
-  uses interface Boot;
-  uses interface MemsStHardware as Accel;
-  uses interface Timer<TMilli>  as DrainTimer;
-
-#ifdef notdef
-  uses interface MemsStHardware as Gyro;
-  uses interface Timer<TMilli>  as GyroTimer;
-
-  uses interface MemsStHardware as Mag;
-  uses interface Timer<TMilli>  as MagTimer;
-#endif
+  uses {
+    interface Boot;
+    interface LSM6Hardware   as LSM6;
+    interface Timer<TMilli>  as Timer;
+    interface Panic;
+  }
 }
 implementation {
-  typedef struct {
-    int16_t x;
-    int16_t y;
-    int16_t z;
-  } mems_sample_t;
-
-#define SAMPLE_COUNT 60
-
-  uint16_t m_mIdx;
-  uint16_t m_gIdx;
-  uint16_t m_aIdx;
-
-  mems_sample_t   m_magSamples[SAMPLE_COUNT];
-  mems_sample_t  m_gyroSamples[SAMPLE_COUNT];
-  mems_sample_t m_accelSamples[SAMPLE_COUNT];
-
-
-  void dump_registers() {
-    regdump[reg_idx].r1        = call Accel.getRegister(LISX_CTRL_REG1);
-    regdump[reg_idx].r4        = call Accel.getRegister(LISX_CTRL_REG4);
-    regdump[reg_idx].r5        = call Accel.getRegister(LISX_CTRL_REG5);
-    regdump[reg_idx].status    = call Accel.getRegister(LISX_STATUS_REG);
-    regdump[reg_idx].fifo_ctrl = call Accel.getRegister(LISX_FIFO_CTRL_REG);
-    regdump[reg_idx].fifo_src  = call Accel.getRegister(LISX_FIFO_SRC_REG);
-    reg_idx++;
-    if (reg_idx >= DUMP_SIZE)
-      reg_idx = 0;
-  }
-
-
   event void Boot.booted() {
-    m_aIdx  = 0;
-    reg_idx = 0;
-    dump_registers();
-
-#ifdef USE_FIFO
-    call Accel.startFifo(10);
-    call DrainTimer.startPeriodic(1024);
-#else
-    call Accel.start(10);
-#endif
-    dump_registers();
     nop();
-
-#ifdef notdef
-    id = call Gyro.whoAmI();
-    call Gyro.config100Hz();
-    call GyroTimer.startPeriodic(1000);
-
-    id = call Mag.whoAmI();
-    call Mag.config10Hz();
-    call MagTimer.startPeriodic(1000);
-#endif
-  }
-
-
-  event void DrainTimer.fired() {
-#ifdef USE_FIFO
-    uint32_t len;
-    bool     overflowed;
-
-    len = call Accel.fifoLen();
-    if (!len) {
-      /* oops, looks like the pipeline/fifo shutdown, restart it */
-      call Accel.restartFifo();
-      return;
-    }
-    overflowed = call Accel.fifoOverflowed();
-    dump_registers();
     nop();
-    while (len) {
-      /* each entry is 6 bytes, 3 x int16_t */
-      call Accel.read((void *) &(m_accelSamples[m_aIdx]), 6);
-      dump_registers();
-      m_aIdx++;
-      len--;                            /* one entry down */
-    }
-    dump_registers();
-    if (overflowed)
-      call Accel.restartFifo();
-    if (m_aIdx >= SAMPLE_COUNT) {
-      call DrainTimer.stop();
-      nop();
-      nop();
-    }
-#else
-    if (call Accel.dataAvail())
-      call Accel.read((void *)(&m_accelSamples[m_aIdx++]), 6);
-    if (m_aIdx >= SAMPLE_COUNT) {
-      call DrainTimer.stop();
-      nop();
-      nop();
-    }
-#endif
+    memset((void *) cfgX, 0, sizeof(cfgX));
+    call LSM6.setMax(MEMS_BUF_SIZE);
+    call LSM6.stop(TRUE);
+
+    cfgX[0].period = SNS_12D5HZ;
+    call LSM6.setConfig(LSM6DSOX_ACCEL, &cfgX[0]);
+    cfgX[2].period = SNS_10HZ;
+    call LSM6.setConfig(LSM6DSOX_MAG,   &cfgX[2]);
+    WIGGLE_TELL;
+    call LSM6.start();
+
+    call Timer.startPeriodic(60 * 1024);
   }
 
 
-#ifdef notdef
-  event void GyroTimer.fired() {
-    if (call Gyro.dataAvail()) {
-      call Gyro.read((void *)(&m_gyroSamples[m_gIdx]), 6);
-      m_gIdx++;
-    }
-    if (m_gIdx >= SAMPLE_COUNT) {
-      call GyroTimer.stop();
-    }
+  event void Timer.fired() {
+    lsm6dsox_fifo_status2_t fs2;
+    uint8_t  tmp;
+
+    /* must read FIFO_STATUS1 first, (BDU) */
+    tmp      = call LSM6.getReg(LSM6DSOX_FIFO_STATUS1);
+    fs2.bits = call LSM6.getReg(LSM6DSOX_FIFO_STATUS2);
+    lenX     = fs2.x.diff_fifo_upper << 8 | tmp;
+    nop();
+    call LSM6.stop(TRUE);
+
+    cfgX[0].period = SNS_26HZ;
+    call LSM6.setConfig(LSM6DSOX_ACCEL, &cfgX[0]);
+    cfgX[2].period = SNS_20HZ;
+    call LSM6.setConfig(LSM6DSOX_MAG,   &cfgX[2]);
+    WIGGLE_TELL;
+    call LSM6.start();
+
+    call Timer.startPeriodic(60 * 1024);
   }
 
 
-  event void MagTimer.fired() {
-    if (call Mag.dataAvail()) {
-      call Mag.read((void *)(&m_magSamples[m_mIdx]), 6);
-      m_mIdx++;
+  uint16_t last_avail;
+
+  event void LSM6.dataAvail() {
+    uint16_t bytes_avail;
+
+    while ((bytes_avail = call LSM6.bytesAvail())) {
+      last_avail = bytes_avail;
+      lenX = bytes_avail;
+      nop();
+      if (bytes_avail > MEMS_BUF_SIZE) {
+        nop();
+        call Panic.warn(PANIC_SNS, 1, bytes_avail, 0, 0, 0);
+        bytes_avail = (MEMS_BUF_SIZE/7) * 7;
+      }
+      call LSM6.read(mems_buf, bytes_avail);
+      nop();
     }
-    if (m_mIdx >= SAMPLE_COUNT)
-      call MagTimer.stop();
   }
-#endif
 
-  event   void     Accel.blockAvail(uint16_t nsamples, uint16_t datarate,
-                              uint16_t bytes_avail) { }
-
+  async event void Panic.hook() { }
 }

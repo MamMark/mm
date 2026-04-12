@@ -5,6 +5,9 @@ pin msp432p401r QZ package.
 It has custom wiring.  See <tos_root>/tos/platforms/dev7 for more
 details.
 
+see GPS section for SparkFun ublox ZOE-M8Q breakout board wiring.
+
+
 *** common files shared with the dev7/mm7 are in tos/platforms/mm
 
 
@@ -83,6 +86,20 @@ the fpu, the right thing will happen and state will be preserved.
 
 
 
+GPS Ublox ZOE-M8Q breakout wiring:
+
+dev7 pins               breakout board      Analyzer
+7.0     gps_sclk        CLK     purple      chn 1
+7.1     gps_tm          PPS     blue        chn 2
+7.2     gps_somi        MISO    green       chn 3
+7.3     gps_simo        MOSI    yellow      chn 4
+6.2     gps_txrdy       INTn    red         chn 6
+9.3     gps_csn         CS      grey        chn 7
+9.4     gps_resetn      RSTn    orange      chn 0
+3V3     3V3             3V3     white
+GND     gnd             GND     black       gnd
+
+
 TLV from rev 2 EXP-MSP432P401R launch pad
 
 
@@ -113,9 +130,7 @@ halt
 
 To recover, use swd and loadbin
 
-zot(26): JLinkExe
-si swd
-device msp432p401r
+zot(26): JLinkExe -device msp432p401r -if swd
 speed 1000
 loadbin main.bin 0   <sometimes this fails too>
 r

@@ -1,4 +1,5 @@
 # Copyright (c) 2017-2019 Daniel J. Maltbie, Eric B. Decker
+# Copyright (c) 2020-2021 Eric B. Decker
 # All rights reserved.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -53,7 +54,7 @@ import tagcore.globals     as     g
 import tagcore.core_rev    as     vers
 from   tagcore.dt_defs     import *
 import tagcore.dt_defs     as     dtd
-import tagcore.sirf_defs   as     sirf
+import tagcore.ubx_defs    as     ubx
 from   tagcore.tagfile     import *
 from   tagcore.misc_utils  import eprint
 from   tagcore.mr_emitters import mr_chksum_err
@@ -82,7 +83,7 @@ rec_last                = 0            # last rec num looked at
 
 # 1st sector of the first is the directory
 DBLK_DIR_SIZE           = 0x200
-RLEN_MAX_SIZE           = 1024
+RLEN_MAX_SIZE           = 2048
 RESYNC_HDR_OFFSET       = 28            # how to get back to the start
                                         # or how to move past the majik
 
@@ -133,7 +134,7 @@ def get_record(fd):
     Input:   fd:         file descriptor we are reading from
     Output:  rec_offset: byte offset of the record from start of file
              hdr         obj_dt_hdr (see above)
-             rec_buf:    byte buffer with entire record
+             rec_buf:    bytearray with entire record
     """
 
     global chksum_errors
@@ -321,8 +322,8 @@ def dump():
             vers.base_ver, vers.dt_ver))
         eprint('   core:     {:12}  e: {:12}  h: {:12}  panic:  h: {:12}'.format(
             vers.core_ver, vers.ce_ver, vers.ch_ver, vers.pi_ver))
-        eprint('   sirf:  d: {:12}  e: {:12}  h: {:12}'.format(
-            vers.sd_ver, vers.se_ver, vers.sh_ver))
+        eprint('   ubx:   d: {:12}  e: {:12}  h: {:12}'.format(
+            vers.ud_ver, vers.ue_ver, vers.uh_ver))
         eprint('   sns:   d: {:12}  e: {:12}  h: {:12}'.format(
             vers.snsd_ver, vers.snse_ver, vers.snsh_ver))
         eprint()
@@ -446,11 +447,12 @@ def dump():
                     if emitters and len(emitters):
                         for e in emitters:
                             e(g.verbose, rec_offset, rec_buf, obj)
-                except struct.error:
+                except struct.error as e:
                     eprint('*** decoder/emitter struct/obj error: (len: {}, '
                           'rtype: {} {}, wanted: {}), @{}'.format(
                               rlen, rtype, dt_name(rtype),
                               len(obj) if obj else 0, rec_offset))
+                    eprint('*** {}'.format(e[0]))
             else:
                 if g.debug or not g.quiet or g.verbose >= 5:
                     eprint('*** no decoder installed for rtype {}, @{}'.format(
@@ -494,7 +496,12 @@ def dump():
         eprint('****** non-zero chksum_errors: {}'.format(chksum_errors))
         eprint()
     eprint('rtypes: {}'.format(dtd.dt_count))
-    eprint('mids:   {}'.format(sirf.mid_count))
+    eprint('cids:   {', end='')
+    lead = ''
+    for k, v in sorted(ubx.cid_count.items()):
+        eprint('{}{:04x}: {}'.format(lead, k, v), end='')
+        lead = ', '
+    eprint('}')
 
 if __name__ == "__main__":
     dump()

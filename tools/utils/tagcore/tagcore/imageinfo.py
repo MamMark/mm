@@ -1,5 +1,5 @@
 # Copyright (c) 2018 Rick Li Fo Sjoe
-# Copyright (c) 2018, 2020 Eric B. Decker
+# Copyright (c) 2018, 2020-2021 Eric B. Decker
 # All rights reserved.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -27,7 +27,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.7'
+__version__ = '0.4.8'
 
 import sys
 import struct
@@ -81,8 +81,11 @@ class ImageInfo:
         out += 'sw_ver\t: {}.{}.{}\t'.format(ver_id['major'],
                                              ver_id['minor'],
                                              ver_id['build'])
-        out += '        hw_m/r : {}/{}\n'.format(
-            hw_ver['model'], hw_ver['rev'])
+        if hw_ver['model'].val >= 0x80:
+            control_str = '        hw_m/r : 0x{:02X}/{}\n'
+        else:
+            control_str = '        hw_m/r : {}/{}\n'
+        out += control_str.format(hw_ver['model'].val, hw_ver['rev'].val)
         out += 'chksum\t: 0x{:08x}\n'.format(chksum)
         for k,tlv in self.im_plus.get_tlv_rows():
             tlv_type = self._iipGetKeyByValue(k)
@@ -90,9 +93,7 @@ class ImageInfo:
         return out
 
     def getPlusSize(self):
-        '''
-        return (cur, max) of the Plus area.
-        '''
+        ''' return (cur, max) of the Plus area. '''
         return self.im_plus.getPlusSize()
 
     def setVersion(self, major, minor, build):

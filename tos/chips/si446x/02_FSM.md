@@ -1,66 +1,82 @@
 The Si446x Driver uses a finite state machine (FSM) to control all major
-actions in the component. The state machine is embodied in c-code data
-structures that are created by a code generator taking a FSM definition as
-input and outputing the Si446xFSM.h file. In addtion to the primary
-structures used by the FSM, some helper structures are auto-generated, such
-as the forward declarations for all action functions.
+actions of the chip driver.
 
-Below is the graphical representation of the Si446x Driver Finite State Machine.
+The state machine is embodied in data structures created by a code
+generator using a FSM definition as input, yielding Si446xFSM.h and
+Si446xFSM.py for use by the C and python driver state machines.
+
+In addition to the primary structures used by the FSM, some helper
+structures are auto-generated, such as the forward declarations for all
+action functions.
+
+Below is the graphical representation of the Si446x Driver Finite State Machine
+(gh:MamMark/mm/tos/chips/si446x/Si446xFSM.png).
 
 ![Si446xDriverLayer](Si446xFSM.png)
 
-# PROCESS TO CREATE runtime code
+### Creating runtime code
 
-The process steps required to produce the Si446xFSM.h file includes the
-precursor state machine representation file used by the QFSM graphical
-finite state machine editor. This Si446xFSM.fsm file is in XML format that
-QFSM knows how to handle. QFSM allows a human to edit, or change, the
-finite state machine through a graphical user interface and save the
-appropriate file formats needed for building the target program.
+The source for the state machine is Si446xFSM.fsm, QFSM can read this file
+and allows the user to make changes.  On output, the user writes any needed
+intermediate files needed for further processing.
 
-## Here are the steps required to update the FSM:
+The Si446xFSM.txt output describes the state machine in tabular form.  This file
+is input to the fsmc.py tool to generate the C and Python files used to
+implement the driver state machine.
 
-- Checkout revision of Si446xFSM.fsm
-- Open with Qfsm
-- Use graphical interface to make changes
-- Save .fsm file
+```
+    Si446xFSM.fsm -> Qfsm -> Si446xFSM.txt -> fsmc.py +-> Si446xFSM.h  (c code)
+         ^             |                              |
+         |             v                              |
+         +<------------+                              +-> Si446xFSM.py (python)
+```
+
+### Updating the FSM:
+
+Qfsm is a graphical tool used for editing finite state machines.  It is no longer
+hosted on the major repositories, so may need to be built.  See
+[Building Qfsm](#building-qfsm) for instructions.
+
+- Checkout current version of Si446xFSM.fsm (gh:MamMark/mm/tos/chips/si446x)
+- Use Qfsm (graphical interface) to change state machine
+- Save modified Si446xFSM.fsm
 - Export ASCII file:
-  o make sure to include asyncronous output, yields .txt
-  o rows:events, columns: states
-- Export .png file
-- Export .html file
-- run the fsmc.py code generator (input .txt file)
-  For C code (nesc, tag):
-
-    tools/fsmc/fsmc.py -i Si446xFSM.txt -o Si446xFSM.h --c-mode
-
-  For Python code (basestation, Pi):
-
-    tools/fsmc/fsmc.py -i Si446xFSM.txt -o Si446xFSM.py --python-mode
-
+  - make sure to include asyncronous output, yields Si446xFSM.txt
+  - rows -> events, columns -> states
+- Export Si446xFSM.png file
+- Export Si446xFSM.html file
+- run the fsmc.py code generator (input Si446xFSM.txt file)
+- Generate C code for Tag (mm) code, and Python for the TBS (basestation).
+  - ```fsmc.py``` lives in gh:MamMark/mm/tools/fsmc
+  - C: ```fsmc.py -i Si446xFSM.txt -o Si446xFSM.h --c-mode```
+  - Python: ```fsmc.py -i Si446xFSM.txt -o Si446xFSM.py --python-mode```
 - make the target platform
 
-## IMPORTANT ARTIFACTS that are saved in git
+### IMPORTANT ARTIFACTS saved in the git repository
 
-- .fsm file contains the QFSM native file
-    - Defined by a Mealy-style machine where each arc (transition) is labeled with an output action.
-    - format is XML
-- .txt file contains the state table in ASCII plain text, used as fsmc.py input format
-  File->Export->StateTable (ASCII).  check box include asyncronous output
-        Orientation: Rows: Events/Columns: States
-- .png file is a graphical representation of the state machine diagram
-- .html file is a web page version of state machine table
-- .h file is the intermediate generated file from the fsmc.py code generator it is checked in as well
-  input to fsmc.py is the .txt above.
+- Si446xFSM.fsm is the source QFSM state machine in XML.
+  - Mealy-style machine where each arc (transition) is labeled with an output action.
+- Si446xFSM.txt contains a textual representation of the state table, input to ```fsmc.py```.
+  ```File->Export->StateTable (ASCII)```.
+  - check box include asyncronous output
+    Orientation: Rows: Events/Columns: States
+- Si446xFSM.png is a graphical representation of the state machine diagram
+- Si446xFSM.html is a web page version of the state machine table.
+- Si446xFSM.h is generated by fsmc.py for use by C implementations.
+- Si446xFSM.py is generated by fsmc.py for use by Python implementations.
 
+**Note:** The Si446xFSM.py file is used by the Python Si446x driver that runs on the TBS
+(basestation).  It lives in both the tag side (gh:MamMark/mm/tos/chips/si446x) and the TBS
+side (gh:MamMark/TagNet/si446x/si446x).  These files should be identical.
 
-# FINITE STATE TABLE input format
+### FINITE STATE TABLE text format
 
-The intermediate state machine format that is input to the fsmc.py code
-generator is the ASCII plain text formatted file exported from QFSM. It
-contains a set of records describing the event/state,action,next_state
-relationships. These names are used to create the enumerations and function
-names provided in the Si446xFSM.h file and used by Si446xDriverLayerP.
+The main output file from Qfsm is a textual representation of the state machine.
+Columns are indexed by State and Rows are indexed by events.  The contents of
+each cell is a (next_state, action) tuple.
+
+When fsmc.py is run on this file it will output files that can be used by
+by the chip driver to implement the state machine.
 
 ```
 "Events/States";"SDN";"POR_W";"CONFIG_W";"RX_ON";"RX_ACTIVE";"TX_ACTIVE";"STANDBY";"PWR_UP_W";"CRC_FLUSH"
@@ -72,7 +88,7 @@ names provided in the Si446xFSM.h file and used by Si446xDriverLayerP.
 " PACKET_SENT";"-";"-";"-";"-";"-";"RX_ON tx_cmp";"-";"-";"-"
 " PREAMBLE_DETECT";"-";"-";"-";"RX_ACTIVE rx_start";"-";"-";"-";"-";"-"
 " RX_THRESH";"-";"-";"-";"-";"RX_ACTIVE rx_fetch_ff";"-";"-";"-";"CRC_FLUSH rx_drain_ff"
-" STANDBY";"STANDBY config";"-";"-";"STANDBY standby";"STANDBY standby";"STANDBY standby";"-";"-";"-"
+" STANDBY";"STANDBY config";"-";"-";"STANDBY standby";"STANDBY standby";"STANDBY standby";"-";"-";"STANDBY standby"
 " SYNC_DETECT";"-";"-";"-";"-";"RX_ACTIVE nop";"-";"-";"-";"-"
 " TRANSMIT";"-";"-";"-";"TX_ACTIVE tx_start";"-";"-";"-";"-";"-"
 " TURNOFF";"-";"-";"-";"SDN pwr_dn";"SDN pwr_dn";"SDN pwr_dn";"SDN pwr_dn";"-";"-"
@@ -82,112 +98,76 @@ names provided in the Si446xFSM.h file and used by Si446xDriverLayerP.
 ```
 
 
-# FSM CODE GENERATOR
+### FSM CODE GENERATOR
 
-The process of converting the graphical representation of the state machine
-into a set of c-code definitions is performed by the FSM code generator in
-the utilities file fsmc.py. This program takes the nominal state table
-input definition found in Si446xFSM.txt, which was produced by the QFSM
-program, into the Si446xFSM.h file with the c-code state machine
-definitions.
+The state machine graphical representation is converted into C and Python definitions by the
+FSM code generator, ```gh:MamMark/mm/tools/fsmc.py```.
 
-The workflow by file is:
+fsmc.py takes the text representation of the state machine (Si446xFSM.txt) and
+converts it into Si446xFSM.h or Si446xFSM.py for use by the drivers.
 
-.fsm -> .txt -> .h -> .exe
-     -> .png -> .md
-     -> .html
 
+```
 invocation:
-
-    python2 <path to fsmc.py>/fsmc.py  --c-mode -i Si446xFSM.txt -o Si446xFSM.h
-
-Since some of this workflow is manual, some care must be taken with
-handling intermediate files. Right now some intermediate artifacts are
-included in the git repository.
-
-
-# Needed tools:
-fsmc.py: gh:MamMark/mm(master)/tools/fsmc/fsmc.py
-        (https://github.com/MamMark/mm/tree/master/tools/fsmc/fsmc.py)
-
-
-# QFSM
-See the INSTALL file at the top level of the source tarball.
-
-Sourceforge.net (http://qfsm.sourceforge.net)
-Version 0.54
-Development version 2015-01-01
-Copyright 2000-2015 by Stefan Duffner, Rainer Strobel
-email: qfsm@duffner-net.de
-
-Qfsm is a graphical editor for finite state machines written in C++ using the graphical toolkit Qt.
-
-Finite state machines are a model to describe complex objects or systems in
-terms of the states they may be in. In practice they are used to design
-integrated circuits or to create regular expressions, scanners or other
-program code.
-
-## Features of Qfsm are:
-
-- Drawing, editing and printing of diagrams
-- Binary, ASCII and "free text" condition codes
-- Integrity check
-- Interactive simulation
-- HDL export in the file formats: AHDL, VHDL, Verilog HDL, KISS
-- Creation of VHDL test code
-- Diagram export in the formats: EPS, SVG, and PNG
-- State table export in Latex, HTML and ASCII plain text format
-- State Machine Compiler (SMC) export (supporting code generation in many programming languages)
-- Ragel file export (used for C/C++, Java or Ruby code generation)
-- Other export formats: SCXML, vvvv Automata code
-
-You can download the source code of Qfsm 0.54 from here:
+    python2 <path to fsmc.py>/fsmc.py  --c-mode      -i Si446xFSM.txt -o Si446xFSM.h
+    python2 <path to fsmc.py>/fsmc.py  --python-mode -i Si446xFSM.txt -o Si446xFSM.py
 ```
-http://sourceforge.net/projects/qfsm/files/qfsm/qfsm-0.54/qfsm-0.54.0-Source.tar.bz2/download
-```
-# INSTALLATION COMMANDS
 
-## QFSM RUNTIME REQUIREMENTS
 
-- Qt SDK version 4.8.3 [4.8.6] http://qt-project.org/downloads
-- CMake 2.8 or higher [2.8.12.2] http://www.cmake.org/
-- Graphviz library 2.38.0 or higher (optional) http://www.graphviz.org/
+## Required tools:
+### fsmc.py - finite state machine compiler
+- fsmc.py: ```gh:MamMark/mm/tools/fsmc```
 
-## General Install (including graphviz and cmake)
-```
-sudo apt-get -y -q install build-essential
-sudo apt-get -y -q install libfontconfig1
-sudo apt-get -y -q install mesa-common-dev
-sudo apt-get -y -q install libglu1-mesa-dev
-sudo apt-get -y -q install libgl1-mesa-dev
-sudo apt-get -y -q install graphviz
-sudo apt-get -y -q install libqt4-dev
-sudo apt-get -y -q install cmake
-```
-## QT Install
-These instructions aren't correct. QT is sold commercially as well as having an open source license. The open source is hard to find and install.
+### Qfsm
 
-Check here for instructions:
+Qfsm is a graphical fsm editor written in C++ using the Qt4 graphics toolkit.  Qt is now sold
+commercially (open source is available but hard to find).  Qt5 is now the current release and Qt6
+is on the horizon.
+
+Because of its commerical licensing, Qt is no longer bundled with Ubuntu starting with 20.04.  Qt4
+is still supported on 18.04.
+
+
+### Running Qfsm
+
+The simplest way to obtain Qfsm is via an AppImage.  The AppImage is a workaround for Qt4 being dropped by 20.04
+and will run on most if not all Linux distributions.  This image is available from the master repository.
+
+- Download the Qfsm AppImage: [Qfsm-x86_64.AppImage](https://github.com/AaronErhardt/qfsm/releases/download/0.56/Qfsm-x86_64.AppImage)
+- Make the AppImage executable: ```chmod +x Qfsm-x86_64.AppImage```
+- You can run the image from the cli: ```./Qfsm-x86_64.AppImage <input.fsm>```
+
+### Building Qfsm
+
+Alternatively, one can build Qfsm from source.  These instructions are written for 18.04 and Qt4.
+
+- Source code can be found at [gh:MamMark/qfsm](https://github.com/MamMark/qfsm).
+- The master repository can be found at [gh:AaronErhardt/qfsm](https://github.com/AaronErhardt/qfsm)
+- Install the following components (Ubuntu 18.04)
 ```
-http://doc.qt.io/archives/qt-4.8/install-x11.html
+    sudo apt install build-essential cmake graphviz libgraphviz-dev
+    sudo apt install qt4-default libqt4-dev
 ```
-Downloads are at:
+There is a Qt4 PPA maintained by rock-core that includes packages for 20.04.
 ```
-http://download.qt.io/official_releases/qt/4.8/4.8.6/
+    sudo add-apt-repository ppa:rock-core/qt4
+    sudo apt update
+    sudo apt install qt4-x11
 ```
-Some other installation instructions that are incomplete and inaccurate but maybe instructive:
+
+- Download the Qfsm source code [gh:MamMark/qfsm](https://github.com/MamMark/qfsm).
 ```
-http://download.qt.io/official_releases/qt/5.10/5.10.0/single/qt-everywhere-src-5.10.0.tar.xz
-chmod +x qt-unified-linux-x64-3.0.2-1-online.run
-sudo ./qt-unified-linux-x64-3.0.2-1-online.runls /opt
-export PATH=/opt/qt4/bin:$PATH
+    cd ~/tag
+    git clone https://github.com/MamMark/qfsm.git
+    cd qfsm
 ```
-## QFSM Install
+
+- Build
+
+From INSTALL file in source directory.
 ```
-wget http://sourceforge.net/projects/qfsm/files/qfsm/qfsm-0.54/qfsm-0.54.0-Source.tar.bz2
-tar xvf 'qfsm-0.54.0-Source.tar.bz2' --directory .
-cd qfsm-0.54.0-Source/
-cmake .
-make
-sudo make install
+    cd ~/tag/qfsm
+    cmake .
+    make
+    sudo make install
 ```

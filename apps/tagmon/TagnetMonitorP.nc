@@ -792,7 +792,8 @@ implementation {
      * set the initial regime.  This will also
      * signal all the sensors and start them off.
      */
-//    call Regime.setRegime(SNS_DEFAULT_REGIME);
+//    call Regime.setRegime(RGM_DEFAULT);
+    nop();
     if (use_regime > RGM_MAX_REGIME)
       use_regime = RGM_DEFAULT;
     call Regime.setRegime(use_regime);

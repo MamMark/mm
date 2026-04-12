@@ -52,5 +52,5 @@ setup(
     scripts          = [],
     provides         = ['tagcore'],
     packages         = ['tagcore'],
-    keywords         = ['tagcore', 'tagdump', 'sirfdump', 'tagctl'],
+    keywords         = ['tagcore', 'tagdump', 'tagctl'],
 )

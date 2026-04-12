@@ -55,7 +55,7 @@ interface MsgBuf {
   /*
    * msg_next: advance the message queue.
    *
-   * input:    ptr/len  pointer to uint16_t that will receive the
+   * input:    lenp     pointer to uint16_t that will receive the
    *                    length of the message.
    *           arrival/mark timestamps describing when the message arrived
    *                    pointer to a rtctime_t ptr and pointer to uint32_t.
@@ -63,12 +63,28 @@ interface MsgBuf {
    * returns:  ptr      to message data
    *                    NULL if no more messages.
    *                    len filled in with length
-   *                    *dtpp filled in with the ptr to the rtctime stamp
+   *                    *rtpp filled in with the ptr to the rtctime stamp
    *                    *markp filled in the mark value.
    *
    * Will set the state of the head of the message queue to BUSY.
    */
-  command uint8_t *msg_next(uint16_t *len, rtctime_t **rtpp, uint32_t *markp);
+  command uint8_t *msg_next(uint16_t *lenp, rtctime_t **rtpp, uint32_t *markp);
+
+  /*
+   * msg_last: return last slice worked on.
+   *
+   * input:    lenp     pointer to uint16_t that will receive the
+   *                    length of the message.
+   *           arrival/mark timestamps describing when the message arrived
+   *                    pointer to a rtctime_t ptr and pointer to uint32_t.
+   *
+   * returns:  ptr      to message data
+   *                    NULL if no slice active.
+   *                    len filled in with length
+   *                    *rtpp filled in with the ptr to the rtctime stamp
+   *                    *markp filled in the mark value.
+   */
+  command uint8_t *msg_last(uint16_t *lenp, rtctime_t **rtpp, uint32_t *markp);
 
   /*
    * msg_release: release a previously allocated msg.

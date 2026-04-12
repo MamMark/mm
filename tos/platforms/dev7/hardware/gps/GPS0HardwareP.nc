@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018 Eric B. Decker
+ * Copyright (c) 2020-2021 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -24,7 +24,10 @@
 #include <platform_panic.h>
 #include <msp432.h>
 #include <platform.h>
+#include <typed_data.h>
 #include <gpsproto.h>
+#include <ublox_msg.h>
+#include <ublox_driver.h>
 
 #ifndef PANIC_GPS
 enum {
@@ -35,73 +38,31 @@ enum {
 #endif
 
 /*
- * The eUSCI for the UART is always clocked by SMCLK which is DCOCLK/2.  So
- * if MSP432_CLK is 16777216 (16MiHz) the SMCLK is 8MiHz, 8388608 Hz.
- *
- * The eUSCI config block values depend on getting the divisor correct so this
- * matters.  The divisor and mctlw value are not easy (if at all possible) to
- * calculate from the SMCLK frequency so it is at best very difficult to
- * do this calculation in an automated fashion.  So we don't.
+ * The eUSCI for the SPI is always clocked by SMCLK which is DCOCLK/2.  So
+ * if MSP432_CLK is 16777216 (16MiHz) the SMCLK is 8MiHz, 8388608 Hz.  We
+ * further divide this by MSP432_UBLOX_DIV to clock the SPI at 2 MiHz.
  */
 
 #if (MSP432_CLK != 16777216)
 #warning MSP432_CLK other than 16777216
 #endif
 
-/*
- * Platform configuration:
- *
- * Which msp432 Usci port assigned to the GPS is determined by the wiring in
- * HplGPS0C.  This will autoselect the port and the port IRQn.  The port
- * interrupt priority is defined in platform.h (GPS_IRQ_PRIORITY).
- */
-
-typedef enum {
-  GPSI_NONE = 0,
-  GPSI_RX_INT_ON,
-  GPSI_RX_INT_OFF,
-  GPSI_RX_ERR,
-  GPSI_RX,
-  GPSI_TX_INT_ON,
-  GPSI_TX_INT_OFF,
-  GPSI_TX,
-  GPSI_TX_RESTART,
-  GPSI_CAPTURE,
-} gps_int_ev_t;
-
-typedef struct {
-  uint32_t     ts;
-  uint16_t     arg;
-  gps_int_ev_t ev;
-  uint8_t      count;
-  uint8_t      stat;
-  uint8_t      tx_rx;
-} gps_int_rec_t;
-
-#define GPS_INT_RECS_MAX 32
+norace uint32_t driver_task_post;
 
 module GPS0HardwareP {
   provides {
-    interface Init as GPS0PeripheralInit;
-    interface Gsd4eUHardware as HW;
+    interface Init as GPS0PeriphInit;
+    interface ubloxHardware as HW;
   }
   uses {
-    interface HplMsp432Usci    as Usci;
-    interface HplMsp432UsciInt as Interrupt;
-    interface PwrReg;
+    interface HplMsp432Usci     as Usci;
+    interface HplMsp432PortInt  as TxRdyIRQ;
+    interface GPSProto          as ubxProto;
     interface Panic;
     interface Platform;
   }
 }
 implementation {
-
-  gps_int_rec_t   gps_int_recs[GPS_INT_RECS_MAX];
-  norace uint32_t gps_int_rec_idx;
-
-  enum {
-    UART_MAX_BUSY_WAIT = 10000,                 /* 10ms max busy wait time */
-  };
-
 
 #define gps_panic(where, arg, arg1) do {                 \
     call Panic.panic(PANIC_GPS, where, arg, arg1, 0, 0); \
@@ -112,516 +73,341 @@ implementation {
   } while (0)
 
 
-  norace uint8_t *m_tx_buf;
-  norace uint16_t m_tx_len;
-
-  norace bool     m_rx_active;          /* true if really receiving */
-  norace uint8_t *m_rx_buf;
-  norace uint16_t m_rx_len;
-  norace uint32_t m_tx_idx, m_rx_idx;
+  uint8_t  *m_tx_buf;                   /* current transmit pointer */
+  uint16_t  m_tx_idx;                   /* where in the buffer. */
+  uint16_t  m_tx_len;                   /* NULL if inactive. */
 
 
-  void gps_log_int(gps_int_ev_t ev, uint8_t stat, uint16_t arg) {
-    gps_int_rec_t *gp;
+  const msp432_usci_config_t ublox_spi_config = {
+    ctlw0 :(EUSCI_A_CTLW0_CKPH        | EUSCI_A_CTLW0_MSB  |
+            EUSCI_A_CTLW0_MST         | EUSCI_A_CTLW0_SYNC |
+            EUSCI_A_CTLW0_SSEL__SMCLK),
+    brw   : MSP432_UBLOX_DIV,     /* see platform_clk_defs */
+                                  /* 2 MiHz */
+    mctlw : 0,                    /* Always 0 in SPI mode */
+    i2coa : 0
+  };
 
-    gp = &gps_int_recs[gps_int_rec_idx];
-    if (gp->ev == ev && (ev == GPSI_RX || ev == GPSI_TX)) {
-      gp->ts = call Platform.usecsRaw();
-      gp->count++;
-      return;
+
+  command error_t GPS0PeriphInit.init() {
+    atomic {
+      call TxRdyIRQ.disable();
+      call TxRdyIRQ.edgeRising();
+      call TxRdyIRQ.clear();
+
+      call Usci.configure(&ublox_spi_config, FALSE);
+      call HW.gps_pwr_on();
+      return SUCCESS;
     }
-    gps_int_rec_idx++;
-    if (gps_int_rec_idx >= GPS_INT_RECS_MAX)
-      gps_int_rec_idx = 0;
-    gp = &gps_int_recs[gps_int_rec_idx];
-    gp->ev = ev;
-    gp->count = 1;
-    gp->stat = stat;
-    gp->arg = arg;
-    if (m_tx_buf)    gp->tx_rx = 2;
-    else             gp->tx_rx = 0;
-    if (m_rx_active) gp->tx_rx |= 1;
-    gp->ts = call Platform.usecsRaw();
   }
 
+  command void HW.gps_set_reset() { UBX_RESET = 1; }
+  command void HW.gps_clr_reset() { UBX_RESET = 0; }
+  command void HW.gps_set_cs()    { UBX_CSN   = 0; }
+  command void HW.gps_clr_cs()    { UBX_CSN   = 1; }
 
-  /* Baud rate divisor equations
-   *
-   * N.Frac = BRCLK / bps
-   * brw = N
-   * BRCLK = 8Mi (8388608)
-   * EUSCI_A_MCTLW_BRS_OFS = lookup[Frac]
-   *
-   * (see table on page 736 of SLAU356E - Revised Dec 2016)
-   */
+  /* clear CS and delay to keep the ublox happy */
+  command void HW.gps_clr_cs_delay() {
+    uint32_t t0, t1;
 
-  const msp432_usci_config_t gps_4800_config = {
-    ctlw0 : EUSCI_A_CTLW0_SSEL__SMCLK | EUSCI_A_CTLW0_RXEIE,
-    brw   : 1747,
-    mctlw : (0 << EUSCI_A_MCTLW_BRF_OFS) |
-            (0xb5 << EUSCI_A_MCTLW_BRS_OFS),
-    i2coa : 0
-  };
-
-
-  const msp432_usci_config_t gps_9600_config = {
-    ctlw0 : EUSCI_A_CTLW0_SSEL__SMCLK | EUSCI_A_CTLW0_RXEIE,
-    brw   : 873,
-    mctlw : (0 << EUSCI_A_MCTLW_BRF_OFS) |
-            (0xee << EUSCI_A_MCTLW_BRS_OFS),
-    i2coa : 0
-  };
-
-
-  const msp432_usci_config_t gps_38400_config = {
-    ctlw0 : EUSCI_A_CTLW0_SSEL__SMCLK | EUSCI_A_CTLW0_RXEIE,
-    brw   : 218,
-    mctlw : (0 << EUSCI_A_MCTLW_BRF_OFS) |
-            (0x55 << EUSCI_A_MCTLW_BRS_OFS),
-    i2coa : 0
-  };
-
-
-  const msp432_usci_config_t gps_115200_config = {
-    ctlw0 : EUSCI_A_CTLW0_SSEL__SMCLK | EUSCI_A_CTLW0_RXEIE,
-    brw   : 72,
-    mctlw : (0 << EUSCI_A_MCTLW_BRF_OFS) |
-            (0xee << EUSCI_A_MCTLW_BRS_OFS),
-    i2coa : 0
-  };
-
-
-#ifdef notdef
-  const msp432_usci_config_t gps_19200_config = { /* kill */
-    ctlw0 : EUSCI_A_CTLW0_SSEL__SMCLK | EUSCI_A_CTLW0_RXEIE,
-    brw   : 436,
-    mctlw : (0 << EUSCI_A_MCTLW_BRF_OFS) |
-            (0xfb << EUSCI_A_MCTLW_BRS_OFS),
-    i2coa : 0
-  };
-
-
-  const msp432_usci_config_t gps_57600_config = {
-    ctlw0 : EUSCI_A_CTLW0_SSEL__SMCLK | EUSCI_A_CTLW0_RXEIE,
-    brw   : 145,
-    mctlw : (0 << EUSCI_A_MCTLW_BRF_OFS) |
-            (0xb5 << EUSCI_A_MCTLW_BRS_OFS),
-    i2coa : 0
-  };
-
-
-  const msp432_usci_config_t gps_307200_config = {
-    ctlw0 : EUSCI_A_CTLW0_SSEL__SMCLK | EUSCI_A_CTLW0_RXEIE,
-    brw   : 27,
-    mctlw : (0 << EUSCI_A_MCTLW_BRF_OFS) |
-            (0x25 << EUSCI_A_MCTLW_BRS_OFS),
-    i2coa : 0
-  };
-
-
-  const msp432_usci_config_t gps_921600_config = {
-    ctlw0 : EUSCI_A_CTLW0_SSEL__SMCLK | EUSCI_A_CTLW0_RXEIE,
-    brw   : 9,
-    mctlw : (0 << EUSCI_A_MCTLW_BRF_OFS) |
-            (0x08 << EUSCI_A_MCTLW_BRS_OFS),
-    i2coa : 0
-  };
-
-
-  const msp432_usci_config_t gps_1228800_config = {
-    ctlw0 : EUSCI_A_CTLW0_SSEL__SMCLK | EUSCI_A_CTLW0_RXEIE,
-    brw   : 6,
-    mctlw : (0 << EUSCI_A_MCTLW_BRF_OFS) |
-            (0xbf << EUSCI_A_MCTLW_BRS_OFS),
-    i2coa : 0
-  };
-#endif
-
-
-  command error_t GPS0PeripheralInit.init() {
-    call Usci.enableModuleInt();
-    return SUCCESS;
+    atomic {
+      t0 = call Platform.usecsRaw();
+      call HW.gps_clr_cs();
+      call HW.spi_clr_port();
+      do {
+        t1 = call Platform.usecsRaw();
+      } while ((t1 - t0) < 1100);
+    }
   }
 
-
-  async command void HW.gps_set_on_off() {
-  }
-
-  async command void HW.gps_clr_on_off() {
-  }
-
-  async command void HW.gps_set_reset() {
-  }
-
-  async command void HW.gps_clr_reset() {
-  }
-
-  async command bool HW.gps_awake() {
-    return 1;
-  }
-
-  async command void HW.gps_pwr_on() {
-    call PwrReg.pwrReq();               /* will signal PwrReg.pwrOn() */
-  }
-
-  async command void HW.gps_pwr_off() {
-    call PwrReg.forceOff();
-  }
-
-  async event void PwrReg.pwrOn() {
-  }
-
-  async event void PwrReg.pwrOff() {
-  }
+//command bool HW.gps_powered()   { return UBX_PWRD_P; }
+  command bool HW.gps_powered()   { return TRUE; }
 
   /*
-   * gps_tx_finnish: wait for tx to finish
+   * gps_pwr_on: power up and reconnect outputs.
    *
-   * input: byte_delay (in us) for last byte to leave
+   * power the chip up, assumes off and any output pins have been
+   * decoupled.
    *
-   * tx_finnish first makes sure that the TXBUF is empty.  ie. that the
-   * byte in TXBUF has actually been transferred into the shift register
-   * and is on its way out.
+   * We power the gps chip up and reconnect any I/Os we should be
+   * driving.
    *
-   * Then if byte_delay is set it will delay some more.  byte_delay is
-   * a value used to let the last byte actually leave the shift register.
-   * This is used prior to changing communications configurations.
+   * Leave the chip with CS deasserted.
    */
-  async command void HW.gps_tx_finnish(uint32_t byte_delay) {
-    uint32_t t0, t1;
+  command void HW.gps_pwr_on() {
+    /* power on */
+    UBX_PWR       = 1;                  /* power up. */
+    UBX_CSN       = 1;                  /* deassert */
+    UBX_CSN_DIR   = 1;                  /* switch to out  */
+
+    /* now switch pins and connect to the gps */
+    UBX_SCLK_SEL0 = 1;  UBX_SCLK_REN  = 0;
+    UBX_TM_SEL0   = 0;  UBX_TM_REN    = 0;
+    UBX_SOMI_SEL0 = 1;  UBX_SOMI_REN  = 0;
+    UBX_SIMO_SEL0 = 1;  UBX_SIMO_REN  = 0;
+    UBX_CSN_REN   = 0;
+    UBX_TXRDY_REN = 0;
+  }
+
+  command void HW.gps_pwr_off() {
+    UBX_SCLK_SEL0 = 0;  UBX_SCLK_REN  = 1;
+    UBX_TM_SEL0   = 0;  UBX_TM_REN    = 1;
+    UBX_SOMI_SEL0 = 0;  UBX_SOMI_REN  = 1;
+    UBX_SIMO_SEL0 = 0;  UBX_SIMO_REN  = 1;
+    UBX_CSN       = 0;
+    UBX_CSN_DIR   = 0;
+    UBX_CSN_REN   = 1;
+    UBX_TXRDY_REN = 1;
+    UBX_PWR       = 0;
+  }
+
+
+  command void HW.spi_clr_port() {
+    call Usci.enterResetMode_();
+    call Usci.leaveResetMode_();
+  }
+
+
+  /*
+   * spi_put: wait for space and throw the byte out
+   * equivilent to FastSpiByte.splitWrite()
+   */
+  command void HW.spi_put(uint8_t byte) {
+    uint32_t t0;
 
     t0 = call Platform.usecsRaw();
     while (!call Usci.isTxIntrPending()) {
-      t1 = call Platform.usecsRaw();
-      if (t1 - t0 > UART_MAX_BUSY_WAIT) {
-	gps_panic(1, t1, t0);
-	return;
-      }
+      if (call Platform.usecsExpired(t0, 150))
+        gps_panic(0, 0, 0);
     }
-    t0 = call Platform.usecsRaw();
-    while (1) {
-      t1 = call Platform.usecsRaw();
-      if (t1 - t0 > byte_delay)
-        return;
-    }
-  }
-
-  async command void HW.gps_speed_di(uint32_t speed) {
-    const msp432_usci_config_t *config = NULL;
-
-    switch(speed) {
-      case    4800:     config =    &gps_4800_config;    break;
-      case    9600:     config =    &gps_9600_config;    break;
-      case   38400:     config =   &gps_38400_config;    break;
-      case  115200:     config =  &gps_115200_config;    break;
-      default:          gps_panic(2, speed, 0);          break;
-
-#ifdef notdef
-      case   19200:     config =   &gps_19200_config;    break;
-      case   57600:     config =   &gps_57600_config;    break;
-      case  307200:     config =  &gps_307200_config;    break;
-      case  921600:     config =  &gps_921600_config;    break;
-      case 1228800:     config = &gps_1228800_config;    break;
-#endif
-    }
-    if (!config)
-	gps_panic(3, speed, 0);
-    call Usci.configure(config, FALSE);
-
-    /* Usci.configure (via reset) turns off all interrupts and
-     * cleans all IFGs out.
-     */
-
+    call Usci.setTxbuf(byte);
   }
 
   /*
-   * enable the rx interrupt.
-   * prior to enabling check for any rx errors and clear them if present
+   * spi_get: wait for incoming and grab the byte
+   * equivilent to FastSpiByte.splitRead()
    */
-  async command void HW.gps_rx_int_enable() {
-    uint16_t stat_word;
+  command uint8_t HW.spi_get() {
+    uint32_t t0;
+    uint8_t  data;
 
-    atomic {
-      stat_word = call Usci.getStat();
-      if (stat_word & EUSCI_A_STATW_RXERR)
-        call Usci.getRxbuf();
-      gps_log_int(GPSI_RX_INT_ON, stat_word, call Usci.getIe());
-      m_rx_active = TRUE;               /* really interested. */
-      call Usci.enableRxIntr();         /* always turn on */
+    t0 = call Platform.usecsRaw();
+    while (!(call Usci.isRxIntrPending())) {
+      if (call Platform.usecsExpired(t0, 150))
+        gps_panic(0, 0, 0);
     }
+    data = call Usci.getRxbuf();
+    return data;
   }
 
-  async command void HW.gps_rx_int_disable() {
-    uint16_t stat_word;
 
-    atomic {
-      stat_word = call Usci.getStat();
-      m_rx_active = FALSE;
-      if ((call Usci.getIe() & EUSCI_A_IE_TXIE) == 0) {   /* tx off? */
-        call Usci.disableRxIntr();                        /* yes, turn rx off too */
-        gps_log_int(GPSI_RX_INT_OFF, stat_word, call Usci.getIe());
-        return;
+  /*
+   * spi_getput: wait for incoming and grab the byte
+   * equivilent to FastSpiByte.splitReadWrite(byte)
+   */
+  command uint8_t HW.spi_getput(uint8_t byte) {
+    uint8_t  data;
+
+    data = call HW.spi_get();
+    call HW.spi_put(byte);
+    return data;
+  }
+
+
+  command void HW.gps_sw_reset(uint16_t bbr_mask, uint8_t reset_mode) {
+    uint32_t      len;
+    ubx_cfg_rst_t rstmsg;
+    uint16_t      chk;
+    uint8_t      *outp;
+
+    /* first hold CS up for at least 1 ms, then reassert */
+    call HW.gps_clr_cs_delay();
+    call HW.gps_set_cs();
+    rstmsg.sync1        = UBX_SYNC1;
+    rstmsg.sync2        = UBX_SYNC2;
+    rstmsg.class        = UBX_CLASS_CFG;
+    rstmsg.id           = UBX_CFG_RST;
+    rstmsg.len          = 4;
+    rstmsg.navBbrMask   = bbr_mask;
+    rstmsg.resetMode    = reset_mode;
+    rstmsg.reserved1    = 0;
+    chk = call ubxProto.fletcher8((void *) &rstmsg.class, rstmsg.len + UBX_CHKSUM_ADJUST);
+    rstmsg.chkA = chk >> 8;
+    rstmsg.chkB = chk & 0xff;
+    outp = (void *) &rstmsg;
+    len  = sizeof(rstmsg);
+    signal HW.gps_raw_collect(outp, len, GPS_DIR_TX);
+    call HW.spi_put(0xff);
+    while (len) {
+      call HW.spi_getput(*outp++);
+      len--;
+    }
+    call HW.spi_getput(0xff);           /* make sure last byte gets out */
+    call HW.spi_get();
+  }
+
+
+  /*
+   * driver_task: handle transmit and receive from the SPI pipe.
+   *
+   * o handles outgoing transmits
+   * o handles incoming bytes, gives to protocol engine
+   *
+   * outgoing byte is either an IDLE or the byte from the m_tx_buf
+   */
+
+  uint8_t next_out() {
+    uint8_t out;
+
+    out = 0xff;
+    if (m_tx_buf) {
+      out = m_tx_buf[m_tx_idx++];
+      if (m_tx_idx >= m_tx_len)
+        m_tx_buf = NULL;
+    }
+    return out;
+  }
+
+
+  task void driver_task() {
+    uint8_t  data;
+    uint32_t byte_count, hang_count;
+
+    hang_count = 64;
+    call HW.gps_txrdy_int_disable();
+    do {
+      if (!m_tx_buf && !UBX_TXRDY_P) {
+        /*
+         * If m_tx_buf is empty (no transmit in progress) and TXRDY is
+         * deasserted (no data available coming from the gps), there there
+         * no work for driver_task to do.  How can this happen?
+         *
+         * Once driver_task is invoked (executing or posted to execute), it
+         * will complete the transmit and/or any incoming receive.
+         *
+         * There is a window during which if the TXRDY interrupt occurs, it
+         * can cause driver_task to be reposted.  This window opens when
+         * the scheduler has removed driver_task from the taskq.  The window
+         * closed above when the txrdy_int is disabled.  If we take a TXRDY
+         * interrupt during that window, it will repost driver_task.
+         *
+         * The currently running/activated driver_task will empty the pipe
+         * until TXRDY becomes deasserted.  When driver_task runs again it
+         * will see no work because the current invokation will have
+         * handled everything.
+         *
+         * That is what the above check guards agains.
+         *
+         * We also check to see if the pipeline has gone to sleep.  We
+         * detect this when TXRDY stays up but we keep reading idle bytes
+         * (0xFF).  If we see hang_count bytes of IDLE we will reset the
+         * pipe by toggling CS.
+         *
+         * Error handling still needs to be sorted out.
+         */
+        break;
       }
-      /* leave rx intr on for the tx side. */
-      gps_log_int(GPSI_RX_INT_OFF, stat_word, 0xff00 | call Usci.getIe());
+      byte_count = 2;
+      call HW.spi_put(next_out());
+      while (TRUE) {
+        data = call HW.spi_getput(next_out());
+        signal HW.gps_byte_avail(data);
+        if (m_tx_buf)                   /* more to transmit */
+          continue;
+        if (m_tx_len) {
+          /* we were transmitting, last sent, tell upstairs */
+          m_tx_len = 0;
+          signal HW.gps_send_done(SUCCESS);
+        }
+        if (data != 0xff) {
+          byte_count = 2;
+          hang_count = 64;
+          continue;
+        }
+        if (UBX_TXRDY_P) {
+          byte_count = 2;
+          hang_count--;
+          if (hang_count)
+            continue;
+
+          signal HW.spi_pipe_stall();
+
+          /*
+           * note spi_pipe_stall will have fixed the pipe.  It completely
+           * resets the pipe so we really need to bail out.  But first
+           * reenable the txrdy interrupt.
+           */
+          call HW.gps_txrdy_int_enable(1);
+          return;
+        }
+
+        byte_count--;
+        if (byte_count == 0)
+          break;
+      }
+      data = call HW.spi_get();
+      signal HW.gps_byte_avail(data);
+    } while (UBX_TXRDY_P);
+    call HW.gps_txrdy_int_enable(2);
+  }
+
+
+  command void HW.spi_pipe_restart() {
+    driver_task_post = 1;
+    post driver_task();
+  }
+
+  command bool HW.gps_txrdy() {
+    return UBX_TXRDY_P;
+  }
+
+
+  command bool HW.gps_txrdy_int_enabled() {
+    return call TxRdyIRQ.isEnabled();
+  }
+
+
+  command void HW.gps_txrdy_int_enable(uint32_t where)  {
+    atomic {
+      if (UBX_TXRDY_P) {
+        gps_warn(199, where);
+        driver_task_post = 2;
+        post driver_task();
+      }
+      call TxRdyIRQ.enable();
     }
   }
 
-  async command void HW.gps_clear_rx_errs() {
-    call Usci.getRxbuf();
+  command void HW.gps_txrdy_int_disable() {
+    call TxRdyIRQ.disable();
   }
 
-  async command error_t HW.gps_receive_block(uint8_t *ptr, uint16_t len) {
-    if (!len || !ptr)
-      return FAIL;
 
-    if (m_rx_buf)
-      return EBUSY;
-
-    m_rx_len = len;
-    m_rx_idx = 0;
-    m_rx_buf = ptr;
-    call HW.gps_rx_int_enable();
-    return SUCCESS;
+  command void HW.gps_txrdy_int_clear() {
+    call TxRdyIRQ.clear();
   }
 
-  async command void    HW.gps_receive_block_stop() {
-    m_rx_buf = NULL;
-  }
 
-  async command void    HW.gps_rx_off() { }
-  async command void    HW.gps_rx_on()  { }
+  command void HW.gps_send(uint8_t *ptr, uint16_t len) {
+    if (!len || !ptr || m_tx_buf)
+      gps_panic(0, 0, 0);
 
-  async command error_t HW.gps_send_block(uint8_t *ptr, uint16_t len) {
-    uint16_t stat_word;
-
-    if (!len || !ptr)
-      return FAIL;
-
-    if (m_tx_buf)
-      return EBUSY;
-
+    m_tx_buf = ptr;
     m_tx_len = len;
     m_tx_idx = 0;
-    m_tx_buf = ptr;
-    /*
-     * There may be a pending send still in progress, the tail end.
-     * If that is the case then TXIFG won't be asserted.  It will assert
-     * when TXBUF goes empty and then we can start up this send.
-     *
-     * So just enable the interrupt and let it fly.
-     */
-    atomic {
-      stat_word = call Usci.getStat();
-      if (stat_word & EUSCI_A_STATW_RXERR)
-        call Usci.getRxbuf();
-      gps_log_int(GPSI_TX_INT_ON, stat_word, call Usci.getIe());
-      if (!m_rx_active) {
-        gps_log_int(GPSI_RX_INT_ON, stat_word, 0xff00 | call Usci.getIe());
-        call Usci.enableRxIntr();
-      }
-      call Usci.enableTxIntr();
-    }
-    return SUCCESS;
-  }
-
-  async command void    HW.gps_send_block_stop() {
-    uint16_t stat_word;
-
-    stat_word = call Usci.getStat();
-    gps_log_int(GPSI_TX_INT_OFF, stat_word, call Usci.getIe());
-    call Usci.disableTxIntr();
-    m_tx_buf = NULL;
+    driver_task_post = 3;
+    post driver_task();
   }
 
 
-  /*
-   * capture current GPS USCI state.
-   *
-   * DESTRUCTIVE.  It pulls IV which modifies h/w state.
-   */
-  async command void    HW.gps_hw_capture() {
-    atomic {
-      gps_log_int(GPSI_CAPTURE, call Usci.getStat(), call Usci.getIe());
-      gps_log_int(GPSI_CAPTURE, call Usci.getIfg(),  call Usci.getIv());
-    }
-  }
-
-  /*
-   * We need the following conditions to be true to restart the gps
-   * tx hw:
-   *
-   * o in the middle of doing a transmit (m_tx_buf active)
-   * o gps_usci->IE says TX is enabled.
-   *
-   * we clear TXIFG and reassert it.  We we exit we should restart
-   * the interrupt stream.
-   */
-  async command bool    HW.gps_restart_tx() {
-    atomic {
-      if (m_tx_buf == NULL)
-        return FALSE;
-      if (m_tx_idx >= m_tx_len)
-        return FALSE;
-      if ((call Usci.getIe() & EUSCI_A_IE_TXIE) == 0)
-        return FALSE;
-
-      /*
-       * replace the interrupt by clearing TXIFG and reasserting
-       */
-      gps_log_int(GPSI_TX_RESTART, call Usci.getStat(), call Usci.getIfg());
-      call Usci.disableTxIntr();
-      call Usci.clrTxIntr();
-      call Usci.setTxIntr();
-      call Usci.enableTxIntr();
-      gps_log_int(GPSI_TX_RESTART, call Usci.getStat(), call Usci.getIfg());
-      return TRUE;
-    }
-  }
-
-  /*
-   * convert a h/w rx err into a gps_rx_err for the upper layers
-   */
-  uint16_t rx_err2gps_err(uint16_t hw_rx_err) {
-    uint16_t gps_err;
-
-    gps_err = 0;
-    if (hw_rx_err & EUSCI_A_STATW_FE)
-      gps_err |= GPSPROTO_RXERR_FRAMING;
-    if (hw_rx_err & EUSCI_A_STATW_OE)
-      gps_err |= GPSPROTO_RXERR_OVERRUN;
-    if (hw_rx_err & EUSCI_A_STATW_PE)
-      gps_err |= GPSPROTO_RXERR_PARITY;
-    return gps_err;
+  async event void TxRdyIRQ.fired() {
+    driver_task_post = 4;
+    post driver_task();
   }
 
 
-  /*
-   * WARNING: there is a nasty interaction between the Interrupt system
-   * and how the TXIFG works on the eUSCI.  On the way in via interrupt
-   * reading the eUSCI->IV register to get the IV clears the highest
-   * IFG as well as generates the IV value.  This clears the TXIFG.
-   *
-   * So if this is the last byte that we are transmitting and we want
-   * to turn off the TX interrupt driven system, we now have no TXIFG
-   * indicating that the TXBUF is empty.  So how does one start the system
-   * back up on the next transmit?  You can try to replace it by
-   * writing IFG but that has implications on other parts of the eUSCI
-   * race conditions etc.  So we turn off interrupts when the last byte
-   * is written to the TXBUF (TXIFG goes down) and signal completion.
-   *
-   * If we then need to reconfigure and need to make sure that all the
-   * bytes have been transmitted, one may need to take up to 2 byte
-   * times before complete, one for the byte in the shift register and
-   * one for the last byte written.
-   */
-  async event void Interrupt.interrupted(uint8_t iv) {
-    uint16_t stat_word;
-    uint8_t data;
-    uint8_t *buf;
-
-    switch(iv) {
-      case MSP432U_IV_RXIFG:
-        /*
-         * if m_rx_active is FALSE we are only using the RX interrupt
-         * to catch overruns etc.  There seems to be a nasty bit of nonsense
-         * where overruns etc. are crashing the tx side.  We are losing
-         * tx interrupts.  We are only interested in logging at this point.
-         *
-         * throw any received characters away.
-         */
-
-        /*
-         * first check for any rx errors.  If an rx error has messsed with
-         * the stream we want to tell the protocol engine and blow things
-         * up.
-         */
-        stat_word = call Usci.getStat();
-        if (stat_word & EUSCI_A_STATW_RXERR) {
-          /* clear the error and we don't care about the data */
-          data = call Usci.getRxbuf();
-          gps_log_int(GPSI_RX_ERR, stat_word, call Usci.getIe());
-          if (m_rx_active)
-            signal HW.gps_rx_err(rx_err2gps_err(stat_word), stat_word);
-          return;
-        }
-        data = call Usci.getRxbuf();
-
-        /*
-         * there is an overrun race condition that can occur.
-         * the window is between the read of Stat and the read
-         * of Rxbuf.  If another byte arrives the serializer can
-         * overrun the byte presented in RxBuf.  To detect this
-         * we have to read Stat again.
-         */
-        stat_word = call Usci.getStat();
-        if (stat_word & EUSCI_A_STATW_RXERR) {
-          data = call Usci.getRxbuf();
-          gps_log_int(GPSI_RX_ERR, stat_word, call Usci.getIe());
-          if (m_rx_active)
-            signal HW.gps_rx_err(rx_err2gps_err(stat_word), stat_word);
-          return;
-        }
-
-        if (!m_rx_active)
-          return;
-
-        if (m_rx_buf) {
-          m_rx_buf[m_rx_idx++] = data;
-          if (m_rx_idx >= m_rx_len) {
-            buf = m_rx_buf;
-            m_rx_buf = NULL;
-            signal HW.gps_receive_block_done(buf, m_rx_len, SUCCESS);
-          }
-        } else
-          signal HW.gps_byte_avail(data);
-        return;
-
-      case MSP432U_IV_TXIFG:
-        if (m_tx_buf == NULL) {
-          /*
-           * this will have the problem of TXIFG being down.
-           * just panic to call attention to the issue.
-           */
-          stat_word = call Usci.getStat();
-          gps_log_int(GPSI_TX_INT_OFF, stat_word, call Usci.getIe());
-          call Usci.disableTxIntr();
-          if (!m_rx_active) {
-            gps_log_int(GPSI_RX_INT_OFF, stat_word,
-                        0xff00 | call Usci.getIe());
-            call Usci.disableRxIntr();
-          }
-          gps_panic(4, iv, 0);
-          return;
-        }
-
-        data = m_tx_buf[m_tx_idx++];
-        stat_word = call Usci.getStat();
-        gps_log_int(GPSI_TX, stat_word, call Usci.getIe());
-        call Usci.setTxbuf(data);
-        if (m_tx_idx >= m_tx_len) {
-          buf = m_tx_buf;
-          stat_word = call Usci.getStat();
-          gps_log_int(GPSI_TX_INT_OFF, stat_word, call Usci.getIe());
-          call Usci.disableTxIntr();
-          m_tx_buf = NULL;
-          if (!m_rx_active) {
-            gps_log_int(GPSI_RX_INT_OFF, stat_word,
-                        0xff00 | call Usci.getIe());
-            call Usci.disableRxIntr();
-          }
-          signal HW.gps_send_block_done(buf, m_tx_len, SUCCESS);
-        }
-        return;
-
-      case MSP432U_IV_NONE:
-        break;
-
-      default:
-        gps_panic(5, iv, 0);
-        break;
-    }
-  }
-
+        event void ubxProto.msgStart(uint16_t len) { }
+        event void ubxProto.msgEnd() { }
+        event void ubxProto.protoAbort(uint16_t reason) { }
   async event void Panic.hook() { }
 }

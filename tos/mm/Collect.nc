@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017-2018 Eric B. Decker
+ * Copyright (c) 2008, 2017-2018, 2021 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -30,6 +30,8 @@ interface Collect {
                             uint8_t     *data,   uint16_t dlen);
 
   async command uint32_t buf_offset();
+
+  command void sa_flush();              /* stand alone flushing */
 
   /* signal on Boot that Collect is happy and up */
   event void collectBooted();

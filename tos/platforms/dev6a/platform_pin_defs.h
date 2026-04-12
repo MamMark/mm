@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Eric B. Decker
+ * Copyright (c) 2017, 2020 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -29,28 +29,29 @@
 #define MEMS0_ID_GYRO  1
 #define MEMS0_ID_MAG   2
 
-#define MEMS0_ACCEL_CSN_PORT     P9
-#define MEMS0_ACCEL_CSN_PIN      4
-#define MEMS0_ACCEL_CSN_BIT      (1 << MEMS0_ACCEL_CSN_PIN)
-#define MEMS0_ACCEL_CSN_IN       (MEMS0_ACCEL_CSN_PORT->IN & MEMS0_ACCEL_CSN_BIT)
-#define MEMS0_ACCEL_CSN          BITBAND_PERI(MEMS0_ACCEL_CSN_PORT->OUT, MEMS0_ACCEL_CSN_PIN)
+#define MEMS0_ACCEL_CSN_PORT    P9
+#define MEMS0_ACCEL_CSN_PIN     4
+#define MEMS0_ACCEL_CSN_BIT     (1 << MEMS0_ACCEL_CSN_PIN)
+#define MEMS0_ACCEL_CSN_IN      (MEMS0_ACCEL_CSN_PORT->IN & MEMS0_ACCEL_CSN_BIT)
+#define MEMS0_ACCEL_CSN         BITBAND_PERI(MEMS0_ACCEL_CSN_PORT->OUT, MEMS0_ACCEL_CSN_PIN)
 #define MEMS0_ACCEL_CSN_DIR     BITBAND_PERI(MEMS0_ACCEL_CSN_PORT->DIR, MEMS0_ACCEL_CSN_PIN)
 
-#define MEMS0_SCLK_PORT         P7
-#define MEMS0_SCLK_PIN          0
+#define MEMS0_SCLK_PORT         P1
+#define MEMS0_SCLK_PIN          1
 #define MEMS0_SCLK_SEL0         BITBAND_PERI(MEMS0_SCLK_PORT->SEL0,   MEMS0_SCLK_PIN)
 
-#define MEMS0_SIMO_PORT         P7
-#define MEMS0_SIMO_PIN          2
-#define MEMS0_SIMO_SEL0         BITBAND_PERI(MEMS0_SIMO_PORT->SEL0,   MEMS0_SIMO_PIN)
-
-#define MEMS0_SOMI_PORT         P7
-#define MEMS0_SOMI_PIN          1
+#define MEMS0_SOMI_PORT         P1
+#define MEMS0_SOMI_PIN          2
 #define MEMS0_SOMI_SEL0         BITBAND_PERI(MEMS0_SOMI_PORT->SEL0,   MEMS0_SOMI_PIN)
+
+#define MEMS0_SIMO_PORT         P1
+#define MEMS0_SIMO_PIN          3
+#define MEMS0_SIMO_SEL0         BITBAND_PERI(MEMS0_SIMO_PORT->SEL0,   MEMS0_SIMO_PIN)
 
 
 /* gps -gsd4e/org */
 
+/* deprecated */
 #define GSD4E_AWAKE_PORT    P6
 #define GSD4E_AWAKE_PIN     1
 #define GSD4E_AWAKE_BIT     (1 << GSD4E_AWAKE_PIN)
@@ -76,7 +77,7 @@
 #define GSD4E_RTS_P         (GSD4E_RTS_PORT->IN & GSD4E_RTS_BIT)
 
 #define GSD4E_TM_PORT       P7
-#define GSD4E_TM_PIN        3
+#define GSD4E_TM_PIN        1
 #define GSD4E_TM_BIT        (1 << GSD4E_TM_PIN)
 #define GSD4E_TM_P          (GSD4E_TM_PORT->IN & GSD4E_TM_BIT)
 
@@ -109,15 +110,41 @@
 #define SI446X_CSN          BITBAND_PERI(SI446X_CSN_PORT->OUT, SI446X_CSN_PIN)
 
 
+/* Dock */
+#define DC_ATTN_S_PORT      P6
+#define DC_ATTN_S_PIN       1
+#define DC_ATTN_S_BIT       (1 << DC_ATTN_S_PIN)
+#define DC_ATTN_S_N         BITBAND_PERI(DC_ATTN_S_PORT->OUT, DC_ATTN_S_PIN)
+
+#define DC_ATTN_M_PORT      P6
+#define DC_ATTN_M_PIN       2
+#define DC_ATTN_M_BIT       (1 << DC_ATTN_M_PIN)
+#define DC_ATTN_M_P         (P6->IN & DC_ATTN_M_BIT)
+#define DC_ATTN_M_PORT_PIN  0x62
+
+#define DC_SPI_EN_PORT      P9
+#define DC_SPI_EN_PIN       3
+#define DC_SPI_EN_BIT       (1 << DC_SPI_EN_PIN)
+#define DC_SPI_EN           BITBAND_PERI(DC_SPI_EN_PORT->OUT, DC_SPI_EN_PIN)
+
+#define DC_SCLK_PORT        P9
+#define DC_SCLK_PIN         5
+#define DC_SCLK_SEL0        BITBAND_PERI(DC_SCLK_PORT->SEL0,   DC_SCLK_PIN)
+
+#define DC_SOMI_PORT        P9
+#define DC_SOMI_PIN         6
+#define DC_SOMI_SEL0        BITBAND_PERI(DC_SOMI_PORT->SEL0,   DC_SOMI_PIN)
+
+#define DC_SIMO_PORT        P9
+#define DC_SIMO_PIN         7
+#define DC_SIMO_SEL0        BITBAND_PERI(DC_SIMO_PORT->SEL0,   DC_SIMO_PIN)
+
+
 /* micro SDs */
 #define SD0_CSN_PORT        P10
 #define SD0_CSN_PIN         0
 #define SD0_CSN             BITBAND_PERI(SD0_CSN_PORT->OUT, SD0_CSN_PIN)
 
-#define SD0_ACCESS_SENSE_BIT     0x08
-#define SD0_ACCESS_SENSE_N       FALSE
-#define SD0_ACCESS_ENA_N
-#define SD0_PWR_ENA
 
 /*
  * see hardware.h for what port is assigned to SD0 for SPI.
@@ -128,6 +155,7 @@
 #define SD0_DMA_RX_TRIGGER MSP432_DMA_CH7_B3_RX0
 #define SD0_DMA_TX_ADDR    EUSCI_B3->TXBUF
 #define SD0_DMA_RX_ADDR    EUSCI_B3->RXBUF
+
 
 /*
  * SD0_PINS_SPI will connect the 3 spi lines on SD0 to the SPI.  This is
@@ -152,46 +180,6 @@
     P10->SEL0 = 0x0E;                                       \
 } while (0)
 
-
-/* SD1, dock sd
- * SD1 is on P7,0-2 and sd1_csn is P9.4
- */
-#define SD1_CSN_PORT        P9
-#define SD1_CSN_PIN         4
-#define SD1_CSN             BITBAND_PERI(SD1_CSN_PORT->OUT, SD1_CSN_PIN)
-
-#define SD1_ACCESS_SENSE_BIT     0x08
-#define SD1_ACCESS_SENSE_N       FALSE
-#define SD1_ACCESS_ENA_N
-#define SD1_PWR_ENA
-
-#define SD1_DMA_TX_TRIGGER MSP432_DMA_CH2_A1_TX
-#define SD1_DMA_RX_TRIGGER MSP432_DMA_CH3_A1_RX
-#define SD1_DMA_TX_ADDR    EUSCI_A1->TXBUF
-#define SD1_DMA_RX_ADDR    EUSCI_A1->RXBUF
-
-/*
- * SD1 is on P7.0-2 and sd1_csn is P9.4
- */
-#define SD1_PINS_PORT  do {                                 \
-    BITBAND_PERI(SD1_CSN_PORT->DIR, SD1_CSN_PIN) = 0;       \
-    P7->SEL0 = 0;                                           \
-  } while (0)
-
-#define SD1_PINS_SPI    do {                                \
-    BITBAND_PERI(SD1_CSN_PORT->DIR, SD1_CSN_PIN) = 1;       \
-    P7->SEL0 = 0x07;                                        \
-} while (0)
-
-
-/*
- * the LIS331 accel breakout board is on the same pins
- * as SD1.  P7.0-2 and accel_csn is P9.4.  int1 is 5.4
- * and int2 is 5.5
- */
-#define LIS331_CSN_PORT P9
-#define LIS331_CSN_PIN  4
-#define LIS331_CSN      BITBAND_PERI(LIS331_CSN_PORT->OUT, LIS331_CSN_PIN)
 
 /*
  * TMP bus consists of two tmp sensors off of an I2C eUSCI.

@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2019 Eric B. Decker
+# Copyright (c) 2018-2019, 2021 Eric B. Decker
 # All rights reserved.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -24,12 +24,11 @@ from   __future__         import print_function
 import struct
 from   misc_utils   import dump_buf
 
-__version__ = '0.4.6'
+__version__ = '0.4.10.dev0'
 
 __all__ = [
     'gps_cmd_name',
     'gps_mon_event_name',
-    'gps_mon_minor_name',
     'gps_mon_major_name',
 ]
 
@@ -65,13 +64,7 @@ gps_cmds = {
     'near':         9,
     'lost':         10,
 
-    'awake':        0x10,
-    'mpm':          0x11,
-    'pulse':        0x12,
-    'reset':        0x13,
     'raw_tx':       0x14,
-    'hibernate':    0x15,
-    'wake':         0x16,
 
     'can':          0x80,
 
@@ -85,7 +78,6 @@ gps_cmds = {
     'rl/force':     0x85,
     'rl/get':       0x86,
 
-    'low':          0xfc,
     'sleep':        0xfd,
     'panic':        0xfe,
     'reboot':       0xff,
@@ -102,13 +94,7 @@ gps_cmds = {
     9:              'near',
     10:             'lost',
 
-    16:             'awake',
-    17:             'mpm',
-    18:             'pulse',
-    19:             'reset',
     20:             'raw_tx',
-    21:             'hibernate',
-    22:             'wake',
 
     0x80:           'can',
 
@@ -121,7 +107,6 @@ gps_cmds = {
     0x85:           'rl/force',
     0x86:           'rl/get',
 
-    0xfe:           'low',
     0xfd:           'sleep',
     0xfe:           'panic',
     0xff:           'reboot',
@@ -134,24 +119,14 @@ def gps_cmd_name(gps_cmd):
 
 CMD_NOP    = gps_cmds['nop']
 CMD_CAN    = gps_cmds['can']
-CMD_LOW    = gps_cmds['low']
 CMD_RAW_TX = gps_cmds['raw_tx']
 
 # total number of bytes, including overhead that we can send
-# using RAW_TX.  SIRF_HEADER is 8 bytes, a0 a2, len, b0, b3
+# using RAW_TX.  UBX_HEADER is 8 bytes, b5 62, class, id, len, chka, chkb
 MAX_RAW_TX = 64
 
 # canned_msgs, see GPSmonitorP.nc
 canned_msgs = {
-    'peek':             0,
-    'swver':            1,
-    'factory':          2,
-    'factory_clear':    3,
-
-    0:                  'peek',
-    1:                  'swver',
-    2:                  'factory',
-    3:                  'factory_clear',
 }
 
 
@@ -163,13 +138,11 @@ gps_mon_events = {
     'swver':         3,
     'startup':       4,
     'msg':           5,
-    'ots_no':        6,
-    'ots_yes':       7,
+
     'fix':           8,
     'time':          9,
-    'lpm':           10,
-    'lpm_error':     11,
-    'timeout_minor': 12,
+    'sleep':         10,
+
     'timeout_major': 13,
     'major_changed': 14,
     'cycle':         15,
@@ -182,13 +155,11 @@ gps_mon_events = {
     3:                  'swver',
     4:                  'startup',
     5:                  'msg',
-    6:                  'ots_no',
-    7:                  'ots_yes',
+
     8:                  'fix',
     9:                  'time',
-    10:                 'lpm',
-    11:                 'lpm_error',
-    12:                 'timeout_minor',
+    10:                 'sleep',
+
     13:                 'timeout_major',
     14:                 'major_changed',
     15:                 'cycle',
@@ -202,60 +173,24 @@ def gps_mon_event_name(mon_ev):
     return gps_mon_events.get(mon_ev, 'mon_ev/' + str(mon_ev))
 
 
-# gps monitor states - minor (basic)
-gps_mon_minors = {
-    'off':              0,
-    'fail':             1,
-    'booting':          2,
-    'config':           3,
-
-    'comm_check':       4,
-    'collect':          5,
-
-    'lpm_wait':         6,
-    'lpm_restart':      7,
-    'lpm':              8,
-
-    'standby':          9,
-
-    0:                  'off',
-    1:                  'fail',
-    2:                  'booting',
-    3:                  'config',
-
-    4:                  'comm_check',
-    5:                  'collect',
-
-    6:                  'lpm_wait',
-    7:                  'lpm_restart',
-    8:                  'lpm',
-
-    9:                  'standby',
-}
-
-def gps_mon_minor_name(minor_state):
-    if isinstance(minor_state, str):
-        return gps_mon_minors.get(minor_state, 1)
-    return gps_mon_minors.get(minor_state, 'minor/' + str(minor_state))
-
 
 # gps monitor states - major
 gps_mon_majors = {
-    'idle':             0,
-    'cycle':            1,
-    'lpm_collect':      2,
-    'sats_startup':     3,
-    'sats_collect':     4,
-    'time_collect':     5,
-    'fix_delay':        6,
+    'boot':             0,
+    'sleep_delay':      1,
+    'sleep':            2,
+    'cycle':            3,
+    'sats_startup':     4,
+    'sats_collect':     5,
+    'time_collect':     6,
 
-    0:                  'idle',
-    1:                  'cycle',
-    2:                  'lpm_collect',
-    3:                  'sats_startup',
-    4:                  'sats_collect',
-    5:                  'time_collect',
-    6:                  'fix_delay',
+    0:                  'boot',
+    1:                  'sleep_delay',
+    2:                  'sleep',
+    3:                  'cycle',
+    4:                  'sats_startup',
+    5:                  'sats_collect',
+    6:                  'time_collect',
 }
 
 def gps_mon_major_name(major_state):

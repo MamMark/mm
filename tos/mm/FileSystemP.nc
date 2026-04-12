@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Eric B. Decker
+ * Copyright (c) 2017, 2021 Eric B. Decker
  * Copyright (c) 2010 - Eric B. Decker, Carl Davis
  * All rights reserved.
  *
@@ -57,10 +57,8 @@ typedef enum {
   FSS_ZERO,				/* reading block zero  */
   FSS_ERASE_REQ,			/* resource requested  */
   FSS_ERASE,                            /* working on an erase */
+  FSS_ERASE_ON_BOOT,                    /* erasing on boot     */
 } fs_state_t;
-
-
-#define FS_ENABLE_ERASE               /* don't enable yet, doesn't work yet */
 
 
 #ifndef PANIC_FS
@@ -96,6 +94,10 @@ implementation {
   fs_state_t   fs_state;
   uint8_t     *fs_buf;
   uint8_t      fs_which;
+
+#ifdef FS_ENABLE_ERASE
+  bool erase_panic, erase_image, erase_dblk;
+#endif
 
   void fs_panic(uint8_t where, parg_t arg0) {
     call Panic.panic(PANIC_FS, where, arg0, 0, 0, 0);
@@ -149,7 +151,6 @@ implementation {
     error_t err;
     uint32_t start;
 
-    fs_state = FSS_ERASE;
     start = fs_loc.locators[fs_which].start;
     switch (fs_which) {
       default:
@@ -197,6 +198,7 @@ implementation {
     fs_which = which;
     fs_state = FSS_ERASE_REQ;
     if (call SDResource.isOwner()) {
+      fs_state = FSS_ERASE;
       do_erase();
       return SUCCESS;
     }
@@ -267,6 +269,7 @@ implementation {
         return;
 
       case FSS_ERASE_REQ:
+        fs_state = FSS_ERASE;
         do_erase();
         return;
     }
@@ -279,6 +282,32 @@ implementation {
                                  (fs_state << 16) | SD0_FS,
                                  0,0,0);
     call SDResource.release();
+  }
+
+
+  bool boot_erase() {
+    if (erase_panic) {
+      fs_state = FSS_ERASE_ON_BOOT;
+      erase_panic = 0;
+      fs_which = FS_LOC_PANIC;
+      do_erase();
+      return TRUE;
+    }
+    if (erase_image) {
+      fs_state = FSS_ERASE_ON_BOOT;
+      erase_image = 0;
+      fs_which = FS_LOC_IMAGE;
+      do_erase();
+      return TRUE;
+    }
+    if (erase_dblk) {
+      fs_state = FSS_ERASE_ON_BOOT;
+      erase_dblk = 0;
+      fs_which = FS_LOC_DBLK;
+      do_erase();
+      return TRUE;
+    }
+    return FALSE;
   }
 
 
@@ -296,6 +325,13 @@ implementation {
     if (err)
       fs_panic(6, err);
     fs_state = FSS_IDLE;
+
+    /*
+     * On boot, if any of the special cells indicating erasure, then
+     * take care of that first.  Then reboot when done.
+     */
+    if (boot_erase())
+      return;
 
     /*
      * signal Booted first, then release the SD
@@ -316,9 +352,14 @@ implementation {
 
   event void SDerase.eraseDone(uint32_t blk_start, uint32_t blk_end, error_t err) {
 #ifdef FS_ENABLE_ERASE
-    if (err || fs_state != FSS_ERASE) {
+    if (err || fs_state < FSS_ERASE || fs_state > FSS_ERASE_ON_BOOT) {
       call Panic.panic(PANIC_FS, 4, err, fs_state, 0, 0);
       return;
+    }
+    if (fs_state == FSS_ERASE_ON_BOOT) {
+      if (boot_erase())
+        return;
+      call OverWatch.reboot(ORR_FS_ERASE);
     }
     fs_state = FSS_IDLE;
     signal FS.eraseDone(fs_which);

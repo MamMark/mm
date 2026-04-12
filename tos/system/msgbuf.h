@@ -32,7 +32,7 @@
 /* set to a power of 2 */
 #define MSG_MAX_MSGS 16
 
-/* minimum memory slice, same as SIRFBIN_OVERHEAD */
+/* minimum memory slice, this is the minimum of all users of Buffer slicing */
 #define MSG_MIN_MSG  8
 
 typedef enum {

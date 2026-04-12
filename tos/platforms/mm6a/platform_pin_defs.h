@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Eric B. Decker
+ * Copyright (c) 2017, 2020 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -190,14 +190,29 @@
 #define SI446X_CSN          BITBAND_PERI(SI446X_CSN_PORT->OUT, SI446X_CSN_PIN)
 
 
+/* Dock */
+#define DC_ATTN_S_PORT      P1
+#define DC_ATTN_S_PIN       2
+#define DC_ATTN_S_BIT       (1 << DC_ATTN_S_PIN)
+#define DC_ATTN_S_N         BITBAND_PERI(DC_ATTN_S_PORT->OUT, DC_ATTN_S_PIN)
+
+#define DC_ATTN_M_PORT      P1
+#define DC_ATTN_M_PIN       3
+#define DC_ATTN_M_BIT       (1 << DC_ATTN_M_PIN)
+#define DC_ATTN_M_P         (P1->IN & DC_ATTN_M_BIT)
+#define DC_ATTN_M_PORT_PIN  0x13
+
+#define DC_SPI_EN_PORT      P8
+#define DC_SPI_EN_PIN       0
+#define DC_SPI_EN_BIT       (1 << DC_SPI_EN_PIN)
+#define DC_SPI_EN           BITBAND_PERI(DC_SPI_EN_PORT->OUT, DC_SPI_EN_PIN)
+
+
 /* micro SDs */
 #define SD0_CSN_PORT        P3
 #define SD0_CSN_PIN         1
 #define SD0_CSN             BITBAND_PERI(SD0_CSN_PORT->OUT, SD0_CSN_PIN)
 
-#define SD0_ACCESS_SENSE_BIT     0x08
-#define SD0_ACCESS_SENSE_N       FALSE
-#define SD0_ACCESS_ENA_N
 
 /* high true, setting a 1 turns the power on, 0 turns it off. */
 #define SD0_PWR_ENA_PORT    P7
@@ -237,41 +252,6 @@
     BITBAND_PERI(P2->SEL0, 4) = 1;                          \
     BITBAND_PERI(P3->SEL0, 0) = 1;                          \
     BITBAND_PERI(P7->SEL0, 7) = 1;                          \
-} while (0)
-
-
-/* SD1, dock sd
- * SD1 is on P7,0-2 and sd1_csn is P9.4
- */
-#define SD1_CSN_PORT        P1
-#define SD1_CSN_PIN         3
-#define SD1_CSN             BITBAND_PERI(SD1_CSN_PORT->OUT, SD1_CSN_PIN)
-
-#define SD1_ACCESS_SENSE_BIT     0x08
-#define SD1_ACCESS_SENSE_N       FALSE
-#define SD1_ACCESS_ENA_N
-#define SD1_PWR_ENA
-
-#define SD1_DMA_TX_TRIGGER MSP432_DMA_CH2_A1_TX
-#define SD1_DMA_RX_TRIGGER MSP432_DMA_CH3_A1_RX
-#define SD1_DMA_TX_ADDR    EUSCI_A1->TXBUF
-#define SD1_DMA_RX_ADDR    EUSCI_A1->RXBUF
-
-/*
- * SD1 is on P2.0, 2.3, and 3.2 and sd1_csn is P1.3
- */
-#define SD1_PINS_PORT  do {                                 \
-    BITBAND_PERI(SD1_CSN_PORT->DIR, SD1_CSN_PIN) = 0;       \
-    BITBAND_PERI(P2->SEL0, 0) = 0;                          \
-    BITBAND_PERI(P2->SEL0, 3) = 0;                          \
-    BITBAND_PERI(P3->SEL0, 2) = 0;                          \
-  } while (0)
-
-#define SD1_PINS_SPI    do {                                \
-    BITBAND_PERI(SD1_CSN_PORT->DIR, SD1_CSN_PIN) = 1;       \
-    BITBAND_PERI(P2->SEL0, 0) = 1;                          \
-    BITBAND_PERI(P2->SEL0, 3) = 1;                          \
-    BITBAND_PERI(P3->SEL0, 2) = 1;                          \
 } while (0)
 
 

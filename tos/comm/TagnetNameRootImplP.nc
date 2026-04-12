@@ -28,7 +28,7 @@ module TagnetNameRootImplP {
   uses interface     TagnetHeader    as  THdr;
   uses interface     TagnetPayload   as  TPload;
   uses interface     TagnetTLV       as  TTLV;
-  uses interface     PlatformNodeId;
+  uses interface     Platform;
   uses interface     Boot;
   uses interface     Panic;
 }
@@ -115,7 +115,7 @@ implementation {
      * zzz This should probably be done differently.
     */
     global_node_id_buf[0] = TN_TLV_NODE_ID;
-    node_id    = call PlatformNodeId.node_id(&node_len);
+    node_id    = call Platform.node_id(&node_len);
 
     global_node_id_buf[1] = node_len;
     for (i = 0; i < node_len; i ++)

@@ -16,9 +16,9 @@
 #define _H_PLATFORM_VERSION_H
 
 #define MAJOR 0
-#define MINOR 4
+#define MINOR 5
 
-#define HW_MODEL 0xF0
+#define HW_MODEL 0x87
 #define HW_REV   1
 
 #endif  // _H_PLATFORM_VERSION_H

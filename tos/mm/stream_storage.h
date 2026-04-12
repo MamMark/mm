@@ -1,7 +1,7 @@
 /*
  * stream_storage.h - Stream Storage Interface (low level)
  * Copyright (c) 2006, 2010 Eric B. Decker, Carl Davis
- * Copyright (c) 2017, Eric B. Decker
+ * Copyright (c) 2017, 2021, Eric B. Decker
  * All rights reserved.
  * Mam-Mark Project
  *
@@ -112,6 +112,7 @@ typedef struct {
 
 typedef enum {
   SSW_IDLE	= 0,
+  SSW_FLUSH,                    /* flushing, sa */
   SSW_REQUESTED,
   SSW_WRITING,
   SSW_16 = 0xffff,              /* force to 16 bit enum */

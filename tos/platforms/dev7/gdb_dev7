@@ -66,3 +66,105 @@ end
 document sd0
 display sd0 state
 end
+
+
+define hw_gps
+
+# gps_csn
+set $_p93out = (($p9->OUT  >> 3) & 1)
+set $_p93dir = (($p9->DIR  & (1 << 3)) ? 'O' : 'I')
+set $_p93mod = (($p9->SEL0 & (1 << 3)) ? 'M' : 'p')
+set $_p93ren = (($p9->REN  & (1 << 3)) ? 'R' : '-')
+
+# gps_txrdy
+set $_p62in  = (($p6->IN   >> 2) & 1)
+set $_p62dir = (($p6->DIR  & (1 << 2)) ? 'O' : 'I')
+set $_p62mod = (($p6->SEL0 & (1 << 2)) ? 'M' : 'p')
+set $_p62ren = (($p6->REN  & (1 << 2)) ? 'R' : '-')
+
+# gps_resetn
+set $_p94out = (($p9->OUT  >> 4) & 1)
+set $_p94dir = (($p9->DIR  & (1 << 4)) ? 'O' : 'I')
+set $_p94mod = (($p9->SEL0 & (1 << 4)) ? 'M' : 'p')
+set $_p94ren = (($p9->REN  & (1 << 4)) ? 'R' : '-')
+
+# gps_sclk
+set $_p70out = (($p7->OUT  >> 0) & 1)
+set $_p70dir = (($p7->DIR  & (1 << 0)) ? 'O' : 'I')
+set $_p70mod = (($p7->SEL0 & (1 << 0)) ? 'M' : 'p')
+set $_p70ren = (($p7->REN  & (1 << 0)) ? 'R' : '-')
+
+# gps_tm
+set $_p71in  = (($p7->IN   >> 1) & 1)
+set $_p71dir = (($p7->DIR  & (1 << 1)) ? 'O' : 'I')
+set $_p71mod = (($p7->SEL0 & (1 << 1)) ? 'M' : 'p')
+set $_p71ren = (($p7->REN  & (1 << 1)) ? 'R' : '-')
+
+# gps_somi
+set $_p72out = (($p7->OUT  >> 2) & 1)
+set $_p72dir = (($p7->DIR  & (1 << 2)) ? 'O' : 'I')
+set $_p72mod = (($p7->SEL0 & (1 << 2)) ? 'M' : 'p')
+set $_p72ren = (($p7->REN  & (1 << 2)) ? 'R' : '-')
+
+# gps_simo
+set $_p73out = (($p7->OUT  >> 3) & 1)
+set $_p73dir = (($p7->DIR  & (1 << 3)) ? 'O' : 'I')
+set $_p73mod = (($p7->SEL0 & (1 << 3)) ? 'M' : 'p')
+set $_p73ren = (($p7->REN  & (1 << 3)) ? 'R' : '-')
+
+if ($p7->REN & (1 << 0))
+    set $_p70val = 'R'
+else
+    if ($p7->SEL0 & (1 << 0))
+        set $_p70val = 'm'
+    else
+        if ($p7->DIR & (1 << 0))
+            set $_p70val = 'O'
+        else
+            set $_p70val = 'I'
+        end
+    end
+end
+
+if ($p7->REN & (1 << 2))
+    set $_p72val = 'R'
+else
+    if ($p7->SEL0 & (1 << 2))
+        set $_p72val = 'm'
+    else
+        if ($p7->DIR & (1 << 2))
+            set $_p72val = 'O'
+        else
+            set $_p72val = 'I'
+        end
+    end
+end
+
+if ($p7->REN & (1 << 3))
+    set $_p73val = 'R'
+else
+    if ($p7->SEL0 & (1 << 3))
+        set $_p73val = 'm'
+    else
+        if ($p7->DIR & (1 << 3))
+            set $_p73val = 'O'
+        else
+            set $_p73val = 'I'
+        end
+    end
+end
+
+printf "\ngps(ua1): csn: %d    tm: %d    nRst: %d    txrdy: %d   (s) crt\n", \
+                    $_p93out,  $_p71in,   $_p94out,     $_p62in
+printf "              %c%c%c      %c%c%c        %c%c%c         %c%c%c      %c%c%c\n", \
+       $_p93dir, $_p93mod, $_p93ren, \
+       $_p71dir, $_p71mod, $_p71ren, $_p94dir, $_p94mod, $_p94ren, \
+       $_p62dir, $_p62mod, $_p62ren, $_p70val, $_p72val, $_p73val
+
+printf "\n"
+__p_usci $uca1 1 0 0d17
+end
+document hw_gps
+display gps hardware state
+end
+

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2019, Eric B. Decker
+ * Copyright (c) 2017-2019, 2021, Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -116,7 +116,6 @@ implementation {
 
   uint8_t     *dm_buf;
   uint32_t     lower, cur_blk, upper;
-  bool         do_erase = 0;
 
 
   void dm_panic(uint8_t where, parg_t p0, parg_t p1) {
@@ -126,19 +125,6 @@ implementation {
 
   event void Boot.booted() {
     error_t err;
-
-#ifdef DBLK_ERASE_ENABLE
-    /*
-     * FS.erase is split phase and will grab the SD,  We will wait on the
-     * erase when we request.  The FS/erase will complete and then we
-     * will get the grant.
-     */
-    nop();                              /* BRK */
-    if (do_erase) {
-      do_erase = 0;
-      call FileSystem.erase(FS_LOC_DBLK);
-    }
-#endif
 
     lower = call FileSystem.area_start(FS_LOC_DBLK);
     upper = call FileSystem.area_end(FS_LOC_DBLK);

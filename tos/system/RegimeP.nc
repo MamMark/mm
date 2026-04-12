@@ -1,6 +1,6 @@
 /*
  * RegimeP.nc: implementation for regime control
- * Copyright 2008 Eric B. Decker
+ * Copyright 2008, 2020-2021 Eric B. Decker
  * All rights reserved.
  */
 
@@ -12,6 +12,7 @@
 
 #include "regime_ids.h"
 #include "platform_regime.h"
+#include <sensor_config.h>
 
 module RegimeP {
   provides interface Regime;
@@ -23,8 +24,14 @@ implementation {
     return cur_regime;
   }
 
-  command uint32_t Regime.sensorPeriod(uint8_t rgm_id) {
-    if (rgm_id > RGM_ID_TIME_MAX)
+  command uint32_t Regime.sensorPeriodMs(uint8_t rgm_id) {
+    if (rgm_id > RGM_ID_MAX)
+      return 0UL;
+    return sns_period_table[cur_regime][rgm_id]/SNS_US2MS_B;
+  }
+
+  command uint32_t Regime.sensorPeriodUs(uint8_t rgm_id) {
+    if (rgm_id > RGM_ID_MAX)
       return 0UL;
     return sns_period_table[cur_regime][rgm_id];
   }

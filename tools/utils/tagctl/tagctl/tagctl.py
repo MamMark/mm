@@ -30,8 +30,7 @@ from   binascii             import hexlify
 from   tagcore              import buf_str
 import tagcore.gps_mon      as     gps
 
-from   tagcore.sirf_defs    import SIRF_SOP_SEQ as SOP
-from   tagcore.sirf_defs    import SIRF_EOP_SEQ as EOP
+from   tagcore.ubx_defs     import UBX_SOP_SEQ as SOP
 
 from   ctl_config           import *
 import ctl_config           as     cfg
@@ -146,7 +145,8 @@ class Send(Command):
         full_msg.extend(mid)
         chk = sum(mid)
         full_msg.extend(bytearray([chk >> 8, chk & 0xff]))
-        full_msg.extend(bytearray([EOP >> 8, EOP & 0xff]))
+# need to compute fletcher
+#        full_msg.extend(bytearray([EOP >> 8, EOP & 0xff]))
 
         cfg.set_node_path()
         cmd_path = os.path.join(cfg.node_path, GPS_CMD_PATH)

@@ -25,7 +25,6 @@ configuration PlatformC {
   provides {
     interface Init as PlatformInit;
     interface Platform;
-    interface PlatformNodeId;
     interface SysReboot;
     interface Rtc;
     interface RtcAlarm;
@@ -38,7 +37,6 @@ configuration PlatformC {
 implementation {
   components PlatformP;                 /* from platforms/mm */
   Platform       = PlatformP;
-  PlatformNodeId = PlatformP;
   PlatformInit   = PlatformP;
   PeripheralInit = PlatformP.PeripheralInit;
   SysReboot      = PlatformP;

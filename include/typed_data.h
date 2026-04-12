@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2020-2021 Eric B. Decker
  * Copyright (c) 2016-2019 Eric B. Decker, Daniel J. Maltbie
  * All rights reserved.
  *
@@ -17,7 +18,6 @@
  * See COPYING in the top level directory of this source tree.
  *
  * Contact: Eric B. Decker <cire831@gmail.com>
- *          Daniel J. Maltbie <dmaltbie@danome.com>
  */
 
 #ifndef __TYPED_DATA_H__
@@ -72,7 +72,7 @@ typedef enum {
   DT_SYNC_FLUSH         = 6,
   DT_SYNC_REBOOT        = 7,
 
-  DT_GPS_RAW_SIRFBIN	= 13,
+  DT_GPS_RAW    	= 13,
   DT_TAGNET             = 14,
   DT_RADIO              = 15,
   DT_GPS_VERSION        = 16,
@@ -90,25 +90,27 @@ typedef enum {
   DT_GPS_TRK            = 26,
   DT_GPS_CLK            = 27,
 
-  DT_SNS_NONE           = 32,           /* 0x20 + sns_id */
+  DT_SNS_ACCEL_N8S      = 28,           /* deprecated */
+
+  DT_SNS_NONE           = 32,
   DT_SNS_BATT           = 33,
   DT_SNS_TMP_PX         = 34,
   DT_SNS_SAL            = 35,
-  DT_SNS_ACCEL_N8S      = 36,
-  DT_SNS_ACCEL_N10S     = 37,
-  DT_SNS_ACCEL_N12S     = 38,
-  DT_SNS_GYRO_N         = 39,
-  DT_SNS_MAG_N          = 40,
-  DT_SNS_PTEMP          = 41,
-  DT_SNS_PRESS          = 42,
-  DT_SNS_SPEED          = 43,
+  DT_SNS_PRESS          = 36,
+  DT_SNS_SPEED          = 37,
 
-  DT_MAX		= 43,
+  /* accel, gyro, mag, fifo driven typed sensor data */
+  DT_SNS_LSM6DSOX       = 38,           /* lsm6dsox + lis2mdl (mag) */
+  DT_SNS_LSM6DSOX_CFG   = 39,           /* lsm6 array configuration */
+  DT_SNS_LPS22HB        = 40,           /* pressure, fifo driven */
+  DT_SNS_LPS22HB_CFG    = 41,           /* lps22hb configuration */
+
+  DT_MAX		= 41,
 } dtype_t;
 
 
 #define DT_MAX_HEADER 80
-#define DT_MAX_RLEN   1024
+#define DT_MAX_RLEN   2048
 
 /*
  * In memory and within a SD sector, DT headers are constrained to be 32
@@ -253,12 +255,7 @@ typedef enum {
   DT_EVENT_PANIC_WARN       = 1,
   DT_EVENT_FAULT            = 2,
 
-  /* replaced by DT blocks, DT_GPS_*, do not reuse */
-//  DT_EVENT_GPS_GEO          = 3,       // deprecated
-//  DT_EVENT_GPS_XYZ          = 4,       // deprecated
-//  DT_EVENT_GPS_TIME         = 5,       // deprecated
-
-  DT_EVENT_GPS_CYCLE_LTFF   = 6,       // low pwr (mpm) To First Fix (MTFF)
+  DT_EVENT_GPS_CYCLE_LTFF   = 6,       // Low pwr To First Fix (LTFF)
   DT_EVENT_GPS_FIRST_FIX    = 7,       // boot to first fix
 
   DT_EVENT_SSW_DELAY_TIME   = 8,
@@ -285,24 +282,25 @@ typedef enum {
 
   /***********************************/
 
+  DT_EVENT_GPS_CYCLE_NONE   = 25,
+  DT_EVENT_GPS_PIPE_STALL   = 26,
+  DT_EVENT_GPS_WAKEUP       = 27,
+  DT_EVENT_GPS_BOOT_SLEEP   = 28,
   DT_EVENT_GPS_CYCLE_START  = 29,
   DT_EVENT_GPS_CYCLE_END    = 30,
-  DT_EVENT_GPS_DELTA        = 31,      // delta time between RTC & GPS
+  DT_EVENT_GPS_DELTA        = 31,       // delta time between RTC & GPS
   DT_EVENT_GPS_BOOT         = 32,
   DT_EVENT_GPS_BOOT_TIME    = 33,
   DT_EVENT_GPS_BOOT_FAIL    = 34,
 
-  DT_EVENT_GPS_MON_MINOR    = 35,
   DT_EVENT_GPS_MON_MAJOR    = 36,
 
   DT_EVENT_GPS_RX_ERR       = 37,
   DT_EVENT_GPS_LOST_INT     = 38,
   DT_EVENT_GPS_MSG_OFF      = 39,
 
-  DT_EVENT_GPS_AWAKE_S      = 40,
   DT_EVENT_GPS_CMD          = 41,
   DT_EVENT_GPS_RAW_TX       = 42,
-  DT_EVENT_GPS_SWVER_TO     = 43,
   DT_EVENT_GPS_CANNED       = 44,
 
   DT_EVENT_GPS_HW_CONFIG    = 45,
@@ -311,11 +309,8 @@ typedef enum {
   DT_EVENT_GPS_TURN_ON      = 47,
   DT_EVENT_GPS_STANDBY      = 48,
   DT_EVENT_GPS_TURN_OFF     = 49,
-  DT_EVENT_GPS_MPM          = 50,
-  DT_EVENT_GPS_PULSE        = 51,
 
   DT_EVENT_GPS_TX_RESTART   = 52,
-  DT_EVENT_GPS_MPM_RSP      = 53,
   DT_EVENT_GPS_ACK          = 54,
   DT_EVENT_GPS_NACK         = 55,
   DT_EVENT_GPS_NO_ACK       = 56,
@@ -324,10 +319,8 @@ typedef enum {
 
   DT_EVENT_GPS_FAST         = 64,
   DT_EVENT_GPS_FIRST        = 65,
-  DT_EVENT_GPS_SATS_2       = 66,
-  DT_EVENT_GPS_SATS_7       = 67,
-  DT_EVENT_GPS_SATS_41      = 68,
   DT_EVENT_GPS_PWR_OFF      = 69,
+  DT_EVENT_GPS_SATS         = 70,
 
   DT_EVENT_16               = 0xffff,   // make sure 2 bytes
 } dt_event_id_t;
@@ -355,7 +348,9 @@ typedef struct {
  */
 
 typedef enum {
-  CHIP_GPS_GSD4E   = 1,
+  CHIP_GPS_NMEA    = 0,                 /* special, used for nmea capture   */
+  CHIP_GPS_GSD4E   = 1,                 /* SirfIV based chipset, deprecated */
+  CHIP_GPS_ZOE     = 2,                 /* ublox, ZOE based gps chipset     */
 } gps_chip_id_t;
 
 
@@ -370,13 +365,23 @@ typedef enum {
  *   DT_GPS_XYZ
  *   DT_GPS_TRK
  *   DT_GPS_CLK
- *   DT_GPS_RAW_SIRFBIN
+ *   DT_GPS_RAW
  *
- * Note: at one point we thought that we would be able to access the
- * GPS data directly (multi-byte fields).  But we are little endian
- * and the GPS protocol is big-endian.  Buttom line, is we don't worry
- * about alignment when dealing with Raw packets.  The decode has to
- * marshal the data to mess with the big endianess.
+ * Mulitbyte data fields:   Multibyte data fields are problematic
+ * because of endianess.
+ *
+ * The GSD4E chipset sirfbin formats present data in big endian.  The
+ * SirfBin/GSD4e drivers deal with this.
+ *
+ * u-blox data formats are little-endian.  Multibyte fields are properly
+ * aligned with respect to the start of the buffer.  dataums are aligned
+ * on natural boundaries, half-words start on even addresses, 32 bit
+ * fields start at quad aligned addresses.
+ *
+ * RAW packets encapsulate packets as they come from the chipset.  UBX
+ * (u-blox binary packets) use CHIP_GPS_ZOE (current gps chip),  SirfBin
+ * packets use CHIP_GPS_GSD4E.  A raw NMEA packet gets the special code
+ * CHIP_GPS_NMEA (yeah its a kludge).
  */
 typedef struct {
   uint16_t len;                 /* size 28 + var */
@@ -385,7 +390,7 @@ typedef struct {
   uint32_t recnum;
   rtctime_t rt;                 /* 10 byte rtctime, 2quad align */
   uint16_t recsum;              /* part of header */
-  uint32_t mark_us;             /* mark stamp in usecs */
+  uint32_t mark_us;             /* mark stamp in usecs, deprecate */
   gps_chip_id_t chip_id;        /* 1 byte */
   uint8_t  dir;                 /* dir, 0 rx from gps, 1 - tx to gps */
   uint16_t pad;                 /* quad alignment */
@@ -401,108 +406,58 @@ typedef struct {
 
 
 /*
- * Data structures for GPS_GSD4E, TIME, GEO, XYZ, and CLK.
+ * Data structures for GPS_ZOE, TIME, GEO, XYZ, and CLK.
  *
- * All multi-byte structures are little endian and are translated from
- * the big endian SirfBin equivilent.
+ * All multi-byte structures are little-endian and copied from unaligned
+ * little-endian fields in the UBXBIN packets.
  */
 
 typedef struct {
   int32_t  capdelta;                    /* microsecs  cur - cap time */
-  uint32_t tow1000;                     /* tow * 1000, ms */
-  uint16_t week_x;                      /* extended gps week */
+  uint32_t itow;                        /* ms, time of week */
+  uint32_t tacc;                        /* time accuracy */
+  uint16_t utc_ms;
   uint16_t utc_year;
   uint8_t  utc_month;
   uint8_t  utc_day;
   uint8_t  utc_hour;
   uint8_t  utc_min;
-  uint16_t utc_ms;                      /* secs * 1000 */
+  uint8_t  utc_sec;
   uint8_t  nsats;
 } dt_gps_time_t;
 
 typedef struct {
   int32_t  capdelta;                    /* microsecs  cur - cap time */
-  uint16_t nav_valid;
-  uint16_t nav_type;
-  int32_t  lat;
-  int32_t  lon;
-  int32_t  alt_ell;                     /* ellipsoid */
-  int32_t  alt_msl;                     /* mean sea level */
-  uint32_t sat_mask;
-  uint32_t tow1000;                     /* tow * 1000, ms */
-  uint16_t week_x;                      /* week extended */
+  uint32_t itow;                        /* ms, time of week */
+  int32_t  lat;                         /* * 1e-7 */
+  int32_t  lon;                         /* * 1e-7 */
+  int32_t  alt_ell;                     /* ellipsoid, mm */
+  int32_t  alt_msl;                     /* mean sea level, mm */
+  uint32_t hacc;                        /* horz accuracy,  mm */
+  uint32_t vacc;                        /* vert accuracy,  mm */
+  uint16_t pdop;                        /* * 100, position dop */
+  uint8_t  fixtype;
+  uint8_t  flags;
   uint8_t  nsats;
-  uint8_t  add_mode;                    /* additional mode */
-  uint32_t ehpe100;                     /* horz pos err * 10 */
-  uint8_t  hdop5;                       /* hdop * 5, max 250 = 50 */
 } dt_gps_geo_t;
 
 typedef struct {
   int32_t  capdelta;                    /* microsecs  cur - cap time */
-  int32_t  x;
-  int32_t  y;
-  int32_t  z;
-  uint32_t sat_mask;
-  uint32_t tow100;                      /* *100, time of week */
-  uint16_t week_x;                      /* gps week, extended */
-  uint8_t  m1;                          /* see below */
-  uint8_t  hdop5;                       /* hdop * 5 */
-  uint8_t  nsats;                       /* SVs in fix */
+  uint32_t itow;                        /* ms, time of week */
+  int32_t  ecefx;                       /* cm */
+  int32_t  ecefy;                       /* cm */
+  int32_t  ecefz;                       /* cm */
+  uint32_t pacc;                        /* cm, pos accuracy */
 } dt_gps_xyz_t;
 
 typedef struct {                        /* clock status */
   int32_t  capdelta;                    /* microsecs  cur - cap time */
-  uint32_t tow100;
-  uint32_t drift;                       /* drift in Hz */
-  uint32_t bias;                        /* bias in ns  */
-  uint16_t week_x;
-  uint8_t  nsats;
+  uint32_t itow;                        /* ms, time of week    */
+  int32_t  clkb;                        /* clock bias, ns      */
+  int32_t  clkd;                        /* clock drift, ns/s   */
+  uint32_t tacc;                        /* time accuracy, ns   */
+  uint32_t facc;                        /* freq accuracy, ps/s */
 } dt_gps_clk_t;
-
-
-/* MODE1, bit map */
-
-#define SB_NAV_M1_PMODE_MASK            0x07
-#define SB_NAV_M1_TPMODE_MASK           0x08
-#define SB_NAV_M1_ALTMODE_MASK          0x30
-#define SB_NAV_M1_DOPMASK_MASK          0x40
-#define SB_NAV_M1_DGPS_MASK             0x80
-
-/* Position Mode */
-#define SB_NAV_M1_PMODE_NONE            0
-#define SB_NAV_M1_PMODE_SV1KF           1
-#define SB_NAV_M1_PMODE_SV2KF           2
-#define SB_NAV_M1_PMODE_SV3KF           3
-#define SB_NAV_M1_PMODE_SVODKF          4
-#define SB_NAV_M1_PMODE_2DLSQ           5
-#define SB_NAV_M1_PMODE_3DLSQ           6
-#define SB_NAV_M1_PMODE_DR              7
-
-/* Dilution of Precision */
-#define SB_NAV_M1_DOPMASK_OK            0x00
-#define SB_NAV_M1_DOPMASK_EXCEEDED      0x40
-
-/* Differential GPS */
-#define SB_NAV_M1_DGPS_NONE             0x00
-#define SB_NAV_M1_DGPS                  0x80
-
-
-typedef struct {
-  int32_t  capdelta;                    /* microsecs  cur - cap time */
-  uint32_t tow100;                      /* time * 100 (ms)  */
-  uint16_t week_x;                      /* extended week */
-  uint16_t chans;                       /* number of channels, 0 - 12 */
-} dt_gps_trk_t;
-
-/* followed by <chans> dt_gps_trk_elements */
-
-typedef struct {
-  uint16_t az10;                        /* azimuth   * 10, 0 - 3600 */
-  uint16_t el10;                        /* elevation * 10, 0 - 900  */
-  uint16_t state;
-  uint16_t svid;
-  uint8_t  cno[10];                     /* up to 10 cnos */
-} dt_gps_trk_element_t;
 
 
 /*
@@ -523,6 +478,7 @@ typedef struct {
 } PACKED dt_sensor_data_t;
 
 
+/* deprecated */
 typedef struct {
   uint16_t len;                 /* size 32 + var */
   dtype_t  dtype;

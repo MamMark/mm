@@ -40,8 +40,18 @@
 #define IRQ_DEFAULT_PRIORITY    4
 #define IRQ_LOW_PRIORITY        7
 
-#define GPS_IRQN                EUSCIA2_IRQn
-#define GPS_IRQ_PRIORITY        2
+/*
+ * dev7 doesn't use EUSCI interrupts
+ * rather it uses a TXRDY interrupt to run the gps
+ * spi stream.
+ *
+ * GPS_IRQN and GPS_IRQ_PRIORITY are maintained for backward compatibility
+ * with previous GPS implementations.  When the mm6a and dev6a are full
+ * deprecated this can be removed and mm/PlatformP can be appropriately
+ * modified.
+ */
+#define GPS_IRQN                EUSCIA1_IRQn
+#define GPS_IRQ_PRIORITY        4
 
 #define RADIO_IRQN              EUSCIB2_IRQn
 #define RADIO_IRQ_PRIORITY      3
@@ -61,9 +71,8 @@
 extern uint32_t __platform_usecsRaw();
 
 #define TRACE_RESOURCE
+
 #define FS_ENABLE_ERASE
-#define IM_ERASE_ENABLE
-#define DBLK_ERASE_ENABLE
 
 #define SI446x_HW_CTS
 
@@ -83,7 +92,32 @@ extern uint32_t __platform_usecsRaw();
  */
 #define TOSH_DATA_LENGTH 250
 #define GPS_EAVESDROP
+#define DOCK_EAVESDROP
 
+/*
+ * GPS_DEBUG_DEV wraps gps debugging that uses TELL and EXC to communicate
+ * changes in the gps subsystem on a DEV boards that have TELL and EXC
+ * i/o pins defined.
+ */
+#define GPS_DEBUG_DEV
+
+/*
+ * The LSM6DSOX includes an I2C sensor hub hanging off the back end.  External
+ * or Internal pull up resisters are needed to make the I2C bus work.  Depends
+ * on the h/w implementation.
+ *
+ * The DEV7 can use the ST lsm6dsox based development boards, STEVAL-MKI197V1 and
+ * the STEVAL-MKI217V1.
+ *
+ * The 217 includes the LIS2MDL mag and includes external pull up resistors.
+ * (Needed to get the open drain I2C bus to work).
+ *
+ * The 197 uses just a LSM6DSOX with no chips connected to the sensor hubs.  There
+ * are no pull up reistors.  If we are using/testing I2C stuff, we must turn on
+ * the internal pull up resistors.
+ */
+
+// #define PLATFORM_LSM6_I2C_PU_EN
 
 /*
  * platform.h is one of the first files included.

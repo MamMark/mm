@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2019 Eric B. Decker
+# Copyright (c) 2018-2021 Eric B. Decker
 # All rights reserved.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -21,13 +21,14 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.7'
+__version__ = '0.4.10.dev0'
 
 from   ctypes       import c_int32
 from   binascii     import hexlify
 
-from   core_rev     import *
-from   dt_defs      import *
+from   core_rev       import *
+from   dt_defs        import *
+from   imageinfo_defs import *
 
 # GPS_{OD_FIX, FIX_MASK}, gps_{fix_name, expand_satmask, expand_trk_state}
 from   gps_chip_utils import *
@@ -41,10 +42,9 @@ from   core_headers import img_mgr_event_name
 
 from   gps_mon      import *
 
-from   sirf_defs    import *
-import sirf_defs    as     sirf
+from   ubx_defs     import *
+import ubx_defs     as     ubx
 
-from   sirf_headers import mids_w_sids
 from   misc_utils   import dump_buf
 from   misc_utils   import rtc2datetime
 from   misc_utils   import rtctime_full
@@ -97,6 +97,7 @@ ow_reboot_reason_strs = {
     6:  "USER",
     7:  "PANIC",
     8:  "LOWPWR",
+    9:  "FS_ERASE",
 
     'PANIC': 7,
 }
@@ -132,6 +133,7 @@ rbt2c = '    rpt:     {:08x}  reset:   {:08x}      others: {:08x}'
 rbt2d = '    fault/g: {:08x}  fault/n: {:08x}  ss/disable: {:08x}  ps: {:04x}'
 rbt2e = '    reboots: {:4}  panics (g/n): {:4}/{:<4}  strg: {:4}  loc: {:4}'
 rbt2f = '    prev:    {:26}    delta:  {}'
+rbt2fi= '    prev:    invalid                       delta:  0'
 rbt2g = '    rbt_reason:   {:2}  ow_req: {:2}  mode: {:2}  act:  {:2}'
 
 # obj is obj_dt_reboot (includes an obj_owcb record)
@@ -210,8 +212,11 @@ def emit_reboot(level, offset, buf, obj):
         print(rbt2e.format(reboot_count, panics_gold, panic_count,
                            owcb['strange'].val,
                            owcb['strange_loc'].val))
-        print(rbt2f.format(rtctime_full(owcb['prev_boot']),
-                           rtc2datetime(boot_time) - rtc2datetime(prev_boot)))
+        if prev_boot['year'].val < 1970:
+            print(rbt2fi)
+        else:
+            print(rbt2f.format(rtctime_full(owcb['prev_boot']),
+                               rtc2datetime(boot_time) - rtc2datetime(prev_boot)))
         print(rbt2g.format(owcb['reboot_reason'].val,
                            owcb['ow_req'].val,
                            owcb['ow_boot_mode'].val,
@@ -226,13 +231,15 @@ def emit_reboot(level, offset, buf, obj):
 # version emitter support
 
 model_strs = {
-    0x01:       'mm6a',
-    0xf0:       'dev6a',
+    0x07:       'mm7',
+    0x08:       'mm8',
+    0x87:       'dev7',
+    0x88:       'dev8',
 }
 
 
 def model_name(model):
-    return model_strs.get(model, 'model/' + str(model))
+    return model_strs.get(model, 'model(0x' + '{:02x}'.format(model) + ')')
 
 
 # --- offset recnum      brt  len  type  name
@@ -241,13 +248,13 @@ def model_name(model):
 
 ver0  = ' {:s}  {:s}  hw: {:s}/{:d}'
 
-ver1a = '    VERSION: {:10s}  hw model/rev: {:x}/{:x} ({:s}/{:d})  r/i: x({:x}/{:x})'
-ver2a = '    desc:       placeholder'
-ver2b = '    repo0:  (p) heads/tp-master-0-g0ac8c73-dirty'
-ver2b0= '                [https://github.com/tp-freeforall/prod]'
-ver2c = '    repo1:  (m) heads/recsum-0-g04de0f8-dirty'
-ver2c0= '                [https://github.com/cire831/mm]'
-ver2d = '    date:   Fri Dec 29 04:05:07 UTC 2017      ib/len: 0x{:x}/{:d} (0x{:x})'
+ver1a = '    VERSION: {:10s}  hw model/rev: {:x}/{:x}    b/i: x({:x}/{:x})'
+ver2a = '    desc:       {}'
+ver2b = '    repo0:  (p) {}'
+ver2b0= '                [{}]'
+ver2c = '    repo1:  (m) {}'
+ver2c0= '                [{}]'
+ver2d = '    date:   {}      ib/len: 0x{:x}/{:d} (0x{:x})'
 ver2e = '    ii_sig: 0x{:08x}  chksum: 0x{:08x}'
 
 def emit_version(level, offset, buf, obj):
@@ -266,35 +273,31 @@ def emit_version(level, offset, buf, obj):
     model = ii['basic']['hw_ver']['model'].val
     rev   = ii['basic']['hw_ver']['rev'].val
 
-    # convert description and build_date strings to something reasonable
-#    desc  = ii['plus']['image_desc'].val
-#    desc  = desc[:desc.index('\0')]
-#
-#    repo0 = ii['plus']['repo0'].val
-#    repo0 = repo0[:repo0.index('\0')]
-#
-#    repo1 = ii['plus']['repo1'].val
-#    repo1 = repo1[:repo1.index('\0')]
-#
-#    stamp_date = ii['plus']['stamp_date'].val
-#    stamp_date = stamp_date[:stamp_date.index('\0')]
+    tlv_block = ii['plus']
+    desc      = tlv_block.get_tlv(IIP_TLV_DESC)
+    repo0     = tlv_block.get_tlv(IIP_TLV_REPO0)
+    url0      = tlv_block.get_tlv(IIP_TLV_URL0)
+    repo1     = tlv_block.get_tlv(IIP_TLV_REPO1)
+    url1      = tlv_block.get_tlv(IIP_TLV_URL1)
+    stamp     = tlv_block.get_tlv(IIP_TLV_STAMP)
 
     print_hourly(rtctime)
     print(rec0.format(offset, recnum, brt, xlen, xtype,
                       dt_name(xtype)), end = '')
     print(ver0.format(base_name(base), ver_str, model_name(model), rev))
     if (level >= 1):
-        print(ver1a.format(ver_str, model, rev, model_name(model), rev,
+        print(ver1a.format(ver_str, model, rev,
                            base, ii['basic']['im_start'].val))
 
     if (level >= 2):
         print()
-        print(ver2a)
-        print(ver2b)
-        print(ver2b0)
-        print(ver2c)
-        print(ver2c0)
-        print(ver2d.format(ii['basic']['im_start'].val,
+        print(ver2a.format(desc))
+        print(ver2b.format(repo0))
+        print(ver2b0.format(url0))
+        print(ver2c.format(repo1))
+        print(ver2c0.format(url1))
+        print(ver2d.format(stamp,
+                       ii['basic']['im_start'].val,
                        ii['basic']['im_len'].val,
                        ii['basic']['im_len'].val))
         print(ver2e.format(ii['basic']['ii_sig'].val,
@@ -372,37 +375,6 @@ def emit_event(level, offset, buf, obj):
             arg0, arg1, arg2, arg3, arg0, arg1, arg2, arg3))
         return
 
-    # deprecated, backward compatibility
-    if event == EV_GPS_GEO:
-        arg0 = c_int32(arg0).value/10000000.
-        arg1 = c_int32(arg1).value/10000000.
-        arg3 = arg3/1000.
-        print(' {:14s}  {:10.7f}  {:10.7f}  wk/tow: {}/{}'.format(
-            event_name(event), arg0, arg1, arg2, arg3))
-        return
-
-    # deprecated, backward compatibility
-    if event == EV_GPS_XYZ:
-        arg1 = c_int32(arg1).value
-        arg2 = c_int32(arg2).value
-        arg3 = c_int32(arg3).value
-        print(' {:14s} {} - x: {}  y: {}  z: {}'.format(
-            event_name(event), arg0, arg1, arg2, arg3))
-        return
-
-    # deprecated, backward compatibility
-    if event == EV_GPS_TIME:
-        year = (arg0 >> 16) & 0xffff
-        mon  = (arg0 >> 8)  & 0xff
-        day  =  arg0        & 0xff
-        hr   = (arg1 >> 8)  & 0xff
-        xmin =  arg1        & 0xff
-        secs =  arg2 / 1000.
-        print(' {:14s} UTC: {}/{:02}/{:02} {:2}:{:02}:{}'.format(
-            event_name(event), year, mon, day, hr, xmin,
-            '{:.3f}'.format(secs).zfill(6)))
-        return
-
     if event == DCO_REPORT:
         arg0 = c_int32(arg0).value
         arg1 = c_int32(arg1).value
@@ -473,14 +445,6 @@ def emit_event(level, offset, buf, obj):
             cur_s, new_s, delta1000/1000., arg3))
         return
 
-
-    if (event == GPS_MON_MINOR):
-        print(' gps/mon (MINOR) {:^15s} {:>12s} -> {}'.format(
-            '<{}>'.format(gps_mon_event_name(arg2)),
-            gps_mon_minor_name(arg0),
-            gps_mon_minor_name(arg1)))
-        return
-
     if (event == GPS_MON_MAJOR):
         print(' gps/mon (MAJOR) {:^15s} {:>12s} -> {}'.format(
             '<{}>'.format(gps_mon_event_name(arg2)),
@@ -496,11 +460,6 @@ def emit_event(level, offset, buf, obj):
     if event == GPS_RX_ERR:
         print(' GPS_RX_ERR: 0x{:02x}  nerr delta: {}  state: {}'.format(
             arg0, arg1 - arg2, arg3))
-        return
-
-    if event == GPS_MPM_RSP:
-        print(' GPS_MPM_RSP    0x{:04x} ({}) {} {}'.format(
-            arg0, arg1, arg2, arg3))
         return
 
     print(event0.format(event_name(event), arg0, arg1, arg2, arg3))
@@ -533,6 +492,8 @@ def emit_debug(level, offset, buf, obj):
 # GPS_VERSION emitter
 # uses decode_default with dt_gps_hdr_obj to decode
 #
+# Deprecated
+#
 
 def emit_gps_version(level, offset, buf, obj):
     xlen     = obj['gps_hdr']['hdr']['len'].val
@@ -543,8 +504,8 @@ def emit_gps_version(level, offset, buf, obj):
 
     print_hourly(rtctime)
     print(rec0.format(offset, recnum, brt, xlen, xtype, dt_name(xtype)))
-    if (level >= 1):
-        print('    {}'.format(obj['sirf_swver']))
+#    if (level >= 1):
+#        print('    {}'.format(obj['sirf_swver']))
 
 
 def emit_gps_time(level, offset, buf, obj):
@@ -555,24 +516,23 @@ def emit_gps_time(level, offset, buf, obj):
     brt      = secsFromHour_str(rtctime)
 
     capdelta=obj['capdelta'].val
-    tow    = obj['tow1000'].val/float(1000)
-    week_x = obj['week_x'].val
+    itow   = obj['itow'].val
+    tacc   = obj['tacc'].val
+    ms     = obj['utc_ms'].val
     year   = obj['utc_year'].val
     mon    = obj['utc_month'].val
     day    = obj['utc_day'].val
     hr     = obj['utc_hour'].val
     xmin   = obj['utc_min'].val
-    ms     = obj['utc_ms'].val
+    secs   = obj['utc_sec'].val
     nsats  = obj['nsats'].val
-    secs   = ms/1000
-    ms     = ms - secs * 1000
 
     print_hourly(rtctime)
     print(rec0.format(offset, recnum, brt, xlen, xtype,
                       dt_name(xtype)), end = '')
 
-    print('  UTC: {}/{:02}/{:02} {:2}:{:02}:{:02}.{:03}  {}/{:4.3f}         [{}]'.format(
-        year, mon, day, hr, xmin, secs, ms, week_x, tow, nsats))
+    print('  UTC: {}/{:02}/{:02} {:2}:{:02}:{:02}.{:03} {:09}         [{:02d}]  t: {}'.format(
+        year, mon, day, hr, xmin, secs, ms, itow, nsats, tacc))
 
 
 def emit_gps_geo(level, offset, buf, obj):
@@ -583,31 +543,25 @@ def emit_gps_geo(level, offset, buf, obj):
     brt      = secsFromHour_str(rtctime)
 
     capdelta  = obj['capdelta'].val
-    nav_valid = obj['nav_valid'].val
-    nav_type  = obj['nav_type'].val
+    itow      = obj['itow'].val
     lat       = obj['lat'].val/10000000.
     lon       = obj['lon'].val/10000000.
-    alt_ell   = obj['alt_ell'].val/100.
-    alt_msl   = obj['alt_msl'].val/100.
-    satmask   = obj['sat_mask'].val
-    tow       = obj['tow1000'].val/1000.
-    week_x    = obj['week_x'].val
+    alt_ell   = obj['alt_ell'].val/1000.
+    alt_msl   = obj['alt_msl'].val/1000.
+    hacc      = obj['hacc'].val/1000.
+    vacc      = obj['vacc'].val/1000.
+    pdop      = obj['pdop'].val/100.
+    fixtype   = obj['fixtype'].val
+    flags     = obj['flags'].val
     nsats     = obj['nsats'].val
-    add_mode  = obj['add_mode'].val
-    ehpe      = obj['ehpe100'].val/100.
-    hdop      = obj['hdop5'].val/5.
 
-    # if nav_valid is 0 we are overdetermined.
-    fix = (nav_type & GPS_FIX_MASK)
-    fix = GPS_OD_FIX if fix and nav_valid == 0 else fix
-    fix_str = gps_fix_name(fix)
-    fix_str = 'nofix_OD' if fix == 0 and nav_valid == 0 else fix_str
+    fix_str = gps_fix_name(fixtype)
     print_hourly(rtctime)
     print(rec0.format(offset, recnum, brt, xlen, xtype,
                       dt_name(xtype)), end = '')
 
-    print('   {:10.7f}  {:10.7f}      {}/{:4.3f}  {:5}  [{}]'.format(
-        lat, lon, week_x, tow, fix_str, nsats))
+    print('   {:10.7f}  {:10.7f}     {:9}  {:5}  [{:02}]  h: {}  v: {}'.format(
+        lat, lon, itow, fix_str, nsats, hacc, vacc))
 
     if (level >= 1):
         alt_ell_ft = alt_ell * 3.28084
@@ -757,8 +711,6 @@ def emit_sensor_data(level, offset, buf, obj):
     rtctime  = obj['hdr']['rt']
     brt      = secsFromHour_str(rtctime)
 
-    delta    = obj['sched_delta'].val
-
     dt_sns_id = xtype
     print_hourly(rtctime)
     print(rec0.format(offset, recnum, brt, xlen, xtype,
@@ -861,7 +813,7 @@ def emit_config(level, offset, buf, obj):
 #
 # GPS Proto Stats
 #
-#sirf stats: t/o chk err frm ovr par rst  proto    </>     ign
+#ubx stats: t/o chk err frm ovr par rst  proto    </>     ign
 #99999/99999 999 999 999 999 999 999 999 999/999 999/999 99999
 #
 def emit_gps_proto_stats(level, offset, buf, obj):
@@ -893,7 +845,7 @@ def emit_gps_proto_stats(level, offset, buf, obj):
     print('  e: {}  r: {}  f: {}  o: {}'.format(rx_errors, resets,
                                              rx_framing, rx_overrun))
     if level >= 1:
-        print('    sirf stats: t/o chk err frm ovr par rst  proto    </>     ign')
+        print('    ubx stats:  t/o chk err frm ovr par rst  proto    </>     ign')
         print('    {:5d}/{:<5d} {:3d} {:3d} {:3d} {:3d} {:3d} {:3d} {:3d} {:3d}/{:<3d} {:3d}/{:<3d} {:5d}'.format(
             complete,   starts,           rx_timeouts,    chksum_fail,
             rx_errors,  rx_framing,       rx_overrun,     rx_parity,
@@ -903,8 +855,8 @@ def emit_gps_proto_stats(level, offset, buf, obj):
 
 ########################################################################
 #
-# main gps raw emitter, displays DT_GPS_RAW_SIRFBIN
-# obj_dt_gps_raw, 2nd level emit on mid
+# main gps raw emitter, displays DT_GPS_RAW
+# obj_dt_gps_raw, 2nd level emit on ubx class/id (cid)
 #
 
 def emit_gps_raw(level, offset, buf, obj):
@@ -920,34 +872,42 @@ def emit_gps_raw(level, offset, buf, obj):
     print_hourly(rtctime)
     print(rec0.format(offset, recnum, brt, xlen, xtype,
                       dt_name(xtype)), end = '')
-    if (obj['sirf_hdr']['start'].val != SIRF_SOP_SEQ):
-        index = len(obj) - len(obj['sirf_hdr'])
-        print('-- non-binary <{:2}>'.format(dir_str))
+
+    index = len(obj)
+    if buf[index] == ord('$'):
+        print(' -- NMEA <{:2}> [{:s}]'.format(dir_str, buf[index+1:index+6]))
         if (level >= 1):
-            print('    {:s}'.format(buf[index:]), end = '')
+            print('    {:s}'.format(buf[index:].rstrip('\r\n\x00')))
+
+    ubx_start = buf[index] << 8 | buf[index + 1]
+    if ubx_start != UBX_SOP_SEQ:
+        print
         if (level >= 2):
             dump_buf(buf, '    ')
         return
 
-    mid      = obj['sirf_hdr']['mid'].val
-    sid      = buf[len(obj)]                # if there is a sid, next byte
+    # extract cid and len manually.  ubx_len is little endian
+    # class/id are combined with class being most significant.
+    cid = buf[index + 2] << 8 | buf[index + 3]
+    ubx_len = buf[index + 4] | buf[index + 5] << 8
 
-    v = sirf.mid_table.get(mid, (None, None, None, ''))
-    emitters    = v[MID_EMITTERS]           # emitter list
-    decoder_obj = v[MID_OBJECT]             # dt object
-    mid_name    = v[MID_NAME]
+    v = ubx.cid_table.get(cid, (None, None, None, 'unk'))
+    emitters  = v[CID_EMITTERS]         # emitter list
+    ubx_obj   = v[CID_OBJECT]           # object
+    xcid_name = v[CID_NAME]
 
-    sid_str = '' if mid not in mids_w_sids else '/{}'.format(sid)
-    print(' -- MID: {:3}{:4} ({:02x}) <{:2}> {}'.format(
-        mid, sid_str, mid, dir_str, mid_name), end = '')        # sans nl
 
-    if not emitters or len(emitters) == 0:
-        print()
+    if not emitters or len(emitters) == 0 or not ubx_obj:
+        print(' -- UBX: <{:2}> {:16s}        <{:04x}> ({:02x})'.format(
+            dir_str, '[{:s}]'.format(xcid_name), cid, ubx_len))
         if (level >= 5):
-            print('*** no emitters defined for mid {}'.format(mid))
+            print('*** no emitters defined for cid {:04X}'.format(cid))
         return
+
+    print(' -- UBX: <{:2}> {:16s}'.format(
+        dir_str, '[{:s}]'.format(xcid_name)), end='')
     for e in emitters:
-        e(level, offset, buf[len(obj):], decoder_obj)
+        e(level, offset, buf[len(obj):], ubx_obj, dir_bit)
 
 
 def emit_tagnet(level, offset, buf, obj):

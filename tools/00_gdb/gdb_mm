@@ -157,11 +157,11 @@ document now
 nuke ow_control_block
 end
 
-define nuke_dblk_panic
-set ImageManagerP__do_erase=1
-set ImageManagerP__erase_panic=1
-set DblkManagerP__do_erase=1
+define nuke_fs
+set FileSystemP__erase_panic=1
+set FileSystemP__erase_image=1
+set FileSystemP__erase_dblk=1
 end
-document nuke_dblk_panic
-erase panic and dblk
+document nuke_fs
+erase panic, image, and dblk
 end

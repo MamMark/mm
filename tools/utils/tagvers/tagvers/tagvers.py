@@ -49,12 +49,6 @@ except ImportError:
     pix_ver = 'uninstalled'
 
 try:
-    import sirfdump
-    sirfdump_ver = sirfdump.__version__
-except ImportError:
-    sirfdump_ver = 'uninstalled'
-
-try:
     import tagctl
     tagctl_ver = tagctl.__version__
 except ImportError:
@@ -76,8 +70,8 @@ def dump_vers():
         vers.base_ver, vers.dt_ver))
     print('   core:     {:12}  e: {:12}  h: {:12}  panic:  h: {:12}'.format(
         vers.core_ver, vers.ce_ver, vers.ch_ver, vers.pi_ver))
-    print('   sirf:  d: {:12}  e: {:12}  h: {:12}'.format(
-        vers.sd_ver, vers.se_ver, vers.sh_ver))
+    print('   ubx:   d: {:12}  e: {:12}  h: {:12}'.format(
+        vers.ud_ver, vers.ue_ver, vers.uh_ver))
     print('   sns:   d: {:12}  e: {:12}  h: {:12}'.format(
         vers.snsd_ver, vers.snse_ver, vers.snsh_ver))
     print('   net: {} e: {:12}  h: {:12}'.format(18 * ' ',
@@ -87,8 +81,6 @@ def dump_vers():
         tagdump_ver, tagcore.json_emitters.__version__))
     print('tagctl:   {:12}     mr_emitters:     {}'.format(
         tagctl_ver,  tagcore.mr_emitters.__version__))
-    print('sirfdump: {:12}     gps_chip_utils:  {}'.format(
-        sirfdump_ver, tagcore.gps_chip_utils.__version__))
     print('binfin:   {:12}     gps_mon:         {}'.format(
         binfin_ver, tagcore.gps_mon.__version__))
     print('pix:      {:12}     misc_utils:      {}'.format(

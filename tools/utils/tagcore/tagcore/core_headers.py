@@ -23,20 +23,19 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.7'
+__version__ = '0.4.9.dev0'
 
 import binascii
 from   collections  import OrderedDict
 
 from   base_objs    import *
-from   sirf_headers import obj_sirf_hdr
-from   sirf_headers import obj_sirf_swver
+from   ubx_headers  import obj_ubx_hdr
 
 from   sensor_defs  import *
 import sensor_defs  as     sensor
 
-from   sirf_defs    import *
-import sirf_defs    as     sirf
+from   ubx_defs     import *
+import ubx_defs     as     ubx
 
 import tagcore.globals as  g
 
@@ -83,45 +82,49 @@ def decode_sensor(level, offset, buf, obj):
 
 # GPS RAW decoder
 #
-# main gps raw decoder, decodes DT_GPS_RAW_SIRFBIN
-# dt_gps_raw_obj, 2nd level decode on mid
+# main gps raw decoder, decodes DT_GPS_RAW, ubx or nmea.
+# dt_gps_raw_obj, decode on class/id
 #
 # obj must be a obj_dt_gps_raw.
 #
 # this decoder does the following:  (it is not a simple decode_default)
 #
 # o consume/process a gps_raw_hdr (dt_hdr + gps_hdr)
-# o consume/process the sirfbin hdr (SOP + LEN + MID)
-# o checks the sirfbin hdr for proper SOP.
+# o extract class/id from the ubxbin header.
 #
-# Not a sirfbin packet:
+# Note: for ubxbin packets we do not consume the ubx_hdr.  It get decoded
+# so we know the Class/Id.  But the header gets offically processed as part
+# of the ubx packet deocde.
+#
+# NMEA packet:
 # o only consume up to the beginning of the SOP
 #
-# SirfBin packet:
-# o Look mid up in mid_table
-# o consume/process the remainder of the packet using the appropriate decoder
+# UbxBin packet:
+# o Look up class/id in cid_table
+# o consume/process the entire ubxbin packet using the appropriate decoder.
 
 def decode_gps_raw(level, offset, buf, obj):
     consumed = obj.set(buf)
+    start    = buf[consumed]   << 8 | buf[consumed+1]
 
-    if obj['sirf_hdr']['start'].val != SIRF_SOP_SEQ:
-        return consumed - len(obj['sirf_hdr'])
+    if start != UBX_SOP_SEQ:
+        return consumed
 
-    mid = obj['sirf_hdr']['mid'].val
-
+    cid      = buf[consumed+2] << 8 | buf[consumed+3]
     try:
-        sirf.mid_count[mid] += 1
+        ubx.cid_count[cid] += 1
     except KeyError:
-        sirf.mid_count[mid] = 1
+        ubx.cid_count[cid] = 1
 
-    v = sirf.mid_table.get(mid, (None, None, None, ''))
-    decoder     = v[MID_DECODER]            # dt function
-    decoder_obj = v[MID_OBJECT]             # dt object
+    v = ubx.cid_table.get(cid, (None, None, None, ''))
+    decoder     = v[CID_DECODER]        # cid function
+    decoder_obj = v[CID_OBJECT]         # cid object
     if not decoder:
         if level >= 5 or g.debug:
-            print('*** no decoder/obj defined for mid {}'.format(mid))
+            print('*** no decoder/obj defined for class/id {:04X}'.format(cid))
         return consumed
-    return consumed + decoder(level, offset, buf[consumed:], decoder_obj)
+    consumed += decoder(level, offset, buf[consumed:], decoder_obj)
+    return consumed
 
 
 ########################################################################
@@ -271,7 +274,7 @@ def obj_image_basic():
         ('im_chk',    atom(('<I', '0x{:08x}'))),
         ('hw_ver',    obj_hw_version()),
         ('im_plus_len', atom(('<H', '{}'))),
-        ('reserved',  atom(('8s', '{}'))),
+        ('reserved',  atom(('8s', '{}', binascii.hexlify))),
     ]))
 
 
@@ -367,7 +370,7 @@ def obj_dt_debug():
 
 #
 # dt, native, little endian
-# used by DT_GPS_VERSION and DT_GPS_RAW_SIRFBIN (gps_raw)
+# used by DT_GPS_VERSION and DT_GPS_RAW (gps_raw)
 #
 def obj_dt_gps_hdr():
     return aggie(OrderedDict([
@@ -379,10 +382,11 @@ def obj_dt_gps_hdr():
     ]))
 
 
+# deprecated
 def obj_dt_gps_ver():
     return aggie(OrderedDict([
         ('gps_hdr',    obj_dt_gps_hdr()),
-        ('sirf_swver', obj_sirf_swver()),
+#        ('sirf_swver', obj_sirf_swver()),
     ]))
 
 
@@ -390,14 +394,15 @@ def obj_dt_gps_time():
     return aggie(OrderedDict([
         ('gps_hdr',   obj_dt_gps_hdr()),
         ('capdelta',  atom(('<i', '{}'))),
-        ('tow1000',   atom(('<I', '{}'))),
-        ('week_x',    atom(('<H', '{}'))),
+        ('itow',      atom(('<I', '{}'))),
+        ('tacc',      atom(('<I', '{}'))),
+        ('utc_ms',    atom(('<H', '{}'))),
         ('utc_year',  atom(('<H', '{}'))),
         ('utc_month', atom(('<B', '{}'))),
         ('utc_day',   atom(('<B', '{}'))),
         ('utc_hour',  atom(('<B', '{}'))),
         ('utc_min',   atom(('<B', '{}'))),
-        ('utc_ms',    atom(('<H', '{}'))),
+        ('utc_sec',   atom(('<B', '{}'))),
         ('nsats',     atom(('<B', '{}'))),
     ]))
 
@@ -406,19 +411,17 @@ def obj_dt_gps_geo():
     return aggie(OrderedDict([
         ('gps_hdr',   obj_dt_gps_hdr()),
         ('capdelta',  atom(('<i', '{}'))),
-        ('nav_valid', atom(('<H', '0x{:02x}'))),
-        ('nav_type',  atom(('<H', '0x{:02x}'))),
+        ('itow',      atom(('<I', '{}'))),
         ('lat',       atom(('<i', '{}'))),
         ('lon',       atom(('<i', '{}'))),
         ('alt_ell',   atom(('<i', '{}'))),
         ('alt_msl',   atom(('<i', '{}'))),
-        ('sat_mask',  atom(('<I', '0x{:08x}'))),
-        ('tow1000',   atom(('<I', '{}'))),
-        ('week_x',    atom(('<H', '{}'))),
+        ('hacc',      atom(('<I', '{}'))),
+        ('vacc',      atom(('<I', '{}'))),
+        ('pdop',      atom(('<H', '{}'))),
+        ('fixtype',   atom(('<B', '{}'))),
+        ('flags',     atom(('<B', '0x{:02x}'))),
         ('nsats',     atom(('<B', '{}'))),
-        ('add_mode',  atom(('<B', '0x{:02x}'))),
-        ('ehpe100',   atom(('<I', '{}'))),
-        ('hdop5',     atom(('<B', '{}'))),
     ]))
 
 
@@ -547,12 +550,11 @@ def obj_gps_proto_stats():
     ]))
 
 
-# DT_GPS_RAW_SIRFBIN, dt, native, little endian
-#  sirf data big endian.
+# DT_GPS_RAW, dt, native, little endian
+#  ubx data little endian.
 def obj_dt_gps_raw():
     return aggie(OrderedDict([
-        ('gps_hdr',  obj_dt_gps_hdr()),
-        ('sirf_hdr', obj_sirf_hdr()),
+        ('gps_hdr', obj_dt_gps_hdr()),
     ]))
 
 def obj_dt_tagnet():

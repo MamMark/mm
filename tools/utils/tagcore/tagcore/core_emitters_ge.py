@@ -1,4 +1,4 @@
-# Copyright (c) 2019 Eric B. Decker
+# Copyright (c) 2019-2020 Eric B. Decker
 # All rights reserved.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -32,7 +32,7 @@
 
 from   __future__         import print_function
 
-__version__ = '0.4.6'
+__version__ = '0.4.8.dev2'
 
 import tagcore.globals as g             # get emit level, will be numeric
 from   core_events import *             # get event identifiers
@@ -42,9 +42,6 @@ import core_emitters
 # gps events we want to display
 gps_events = {
     PANIC_WARN:     0,
-    EV_GPS_GEO:     0,
-    EV_GPS_XYZ:     0,
-    EV_GPS_TIME:    0,
     GPS_LTFF_TIME:  0,
     GPS_FIRST_FIX:  0,
     GPS_FIX:        0,
@@ -53,7 +50,6 @@ gps_events = {
     GPS_BOOT:       1,
     GPS_BOOT_TIME:  1,
     GPS_BOOT_FAIL:  0,
-    GPS_MON_MINOR:  5,
     GPS_MON_MAJOR:  1,
     GPS_RX_ERR:     0,
     GPS_LOST_INT:   0,
@@ -61,12 +57,7 @@ gps_events = {
     GPS_TURN_ON:    9,
     GPS_STANDBY:    9,
     GPS_TURN_OFF:   9,
-    GPS_MPM:        9,
-    GPS_MPM_RSP:    9,
     GPS_FIRST:      9,
-    GPS_SATS2:      4,
-    GPS_SATS7:      4,
-    GPS_SATS41:     4,
 }
 
 

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2008, 2010, Eric Decker
+ * Copyright (c) 2008, 2010, 2021Eric Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -74,11 +74,25 @@ interface SSWrite {
    */
   command void buffer_full(ss_wr_buf_t *buf_handle);
 
+
   /**
-   * call when Collect has been kicked by a SysReboot.shutdown_flush to
-   * force SSW to flush to disk any pending buffers.
+   * start_sa_flush: set up to push out any full buffers (stand alone)
+   *
+   * returns TRUE if okay to proceed with the flush.
+   */
+  async command bool start_sa_flush();
+
+
+  /**
+   * sa_flush: standalone flush Stream buffers using SDsa (stand alone)
+   *
+   * input:     flush_all       TRUE, flush all including ALLOC buffer.
+   *            clear           TRUE, clear buffer state after writing.
+   *
+   * typically called by Collect when kicked by SysReboot.shutdown_flush()
+   * to force SSW to flush any pending buffers.
    *
    * Needs to be async, called from the Panic context.
    */
-  async command void flush_all();
+  async command void sa_flush(bool flush_all, bool clear);
 }

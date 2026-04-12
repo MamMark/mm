@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Eric B. Decker
+ * Copyright (c) 2020 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,21 +20,19 @@
  */
 
 configuration HplGPS0C {
-  provides {
-    interface Gsd4eUHardware;
-    interface PwrReg as GPSPwr;
-  }
+  provides interface ubloxHardware;
 }
 implementation {
-  components Msp432UsciA2P as UsciP;
+  components Msp432UsciA1P as UsciP;
   components GPS0HardwareP as GpsHwP;
-  components PwrGpsMemsC;
+  components HplMsp432PortIntP as PortInts;
 
-  Gsd4eUHardware = GpsHwP;
-  GPSPwr         = PwrGpsMemsC;
+  components McuSleepC;
+  PortInts.McuSleep -> McuSleepC;
+
+  ubloxHardware     = GpsHwP;
   GpsHwP.Usci      -> UsciP;
-  GpsHwP.Interrupt -> UsciP;
-  GpsHwP.PwrReg    -> PwrGpsMemsC;
+  GpsHwP.TxRdyIRQ  -> PortInts.Int[UBX_TXRDY_PORT_INT];
 
   components PanicC, PlatformC;
   GpsHwP.Panic    -> PanicC;

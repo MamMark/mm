@@ -13,20 +13,21 @@ PFLAGS += -I%T/platforms/dev7/hardware/gps
 PFLAGS += -I%T/platforms/dev7/hardware/pwr_mgr
 PFLAGS += -I%T/platforms/dev7/hardware/si446x
 PFLAGS += -I%T/platforms/dev7/hardware/sensors
+PFLAGS += -I%T/platforms/dev7/hardware/dock
 
 PFLAGS += -I%T/platforms/mm
 
 PFLAGS += -I%T/mm
-PFLAGS += -I%T/mm/GPS
 PFLAGS += -I%T/system/OverWatch
 PFLAGS += -I%T/system/panic
 
 PFLAGS += -I%T/lib
 
+PFLAGS += -I%T/chips/mems
+PFLAGS += -I%T/chips/sd
 PFLAGS += -I%T/chips/si446x
 PFLAGS += -I%T/chips/si446x/WDS-files
-PFLAGS += -I%T/chips/sd
-PFLAGS += -I%T/chips/gsd4e_v4
+PFLAGS += -I%T/chips/ublox
 
 PFLAGS += -I%T/chips/cortex
 PFLAGS += -I%T/chips/msp432
@@ -43,6 +44,7 @@ PFLAGS += -I%T/lib/serial
 PFLAGS += -I%T/lib/timer
 
 PFLAGS += -I%T/comm
+PFLAGS += -I%T/comm/DockComm
 PFLAGS += -I%T/comm/TagNames
 PFLAGS += -I%T/lib/rfxlink/layers
 PFLAGS += -I%T/lib/rfxlink/util

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 Eric B. Decker
+ * Copyright (c) 2016-2018, 2021 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,6 +19,8 @@
  * Contact: Eric B. Decker <cire831@gmail.com>
  */
 
+#include <platform_pin_defs.h>
+
 configuration HplSD0C {
   provides {
     interface SDHardware;
@@ -32,8 +34,8 @@ implementation {
   SDHardware = SDHWP;
   SDHWP.Usci      -> UsciP;
   SDHWP.Interrupt -> UsciP;
-  SDHWP.DmaTX     -> DMAC.Dma[6];
-  SDHWP.DmaRX     -> DMAC.Dma[7];
+  SDHWP.DmaTX     -> DMAC.Dma[SD0_DMA_TX_CHANNEL];
+  SDHWP.DmaRX     -> DMAC.Dma[SD0_DMA_RX_CHANNEL];
 
   components PanicC, PlatformC;
   SDHWP.Panic    -> PanicC;

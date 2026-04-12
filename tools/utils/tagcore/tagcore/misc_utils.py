@@ -67,6 +67,8 @@ def utc_str(pretty=1):
 # rtc2datetime: convert an rtc object to a datetime object
 #
 def rtc2datetime(rtc_obj):
+    if rtc_obj['year'].val == 0:
+        return datetime(1970,1,1,0,0,0,0)
     return datetime(
         rtc_obj['year'].val,
         rtc_obj['mon'].val,

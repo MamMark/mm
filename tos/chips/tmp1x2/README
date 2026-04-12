@@ -5,7 +5,7 @@ driver supports both.  The tmp112 has an extended range.
 
 Power can be handled explicitly or can be controlled by a resource arbiter.
 An arbiter protects the underlying I2C bus and provides automatic power
-control for the susbystem.  H/W interface code provided by the platform is
+control for the subsystem.  H/W interface code provided by the platform is
 responsible for instantiating each tmp sensor port as well as handling
 power on and off.
 

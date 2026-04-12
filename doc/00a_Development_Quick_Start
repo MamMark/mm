@@ -6,18 +6,6 @@ Debian/Ubuntu
     Ubuntu 18.04, Debian Buster/Squeeze
     Doc update.  Add pip.  grip.
 
-2018-04-08
-    Doc update.  Update ARM toolchain notes.
-
-2017-09-11
-    Ubuntu 16.04, T2 (TinyProd) github:tp-freeforall/prod(tp-master),
-    ARM toolchain, gcc 4.9.3, gdb 7.8.0 (32 bit), python support
-    J-link (Segger), V6.16j (6.16.10)
-
-    T2 (TinyProd) github:tp-freeforall/prod(tp-master),
-    mspdebug JTAG debugging.   4.6.3 based msp430 toolchain
-    Toolchain from http://tinyprod.net/repos/debian (msp430)
-
 **************************************************************************************
 
 1) Host OS Install.
@@ -162,3 +150,24 @@ exit
 
     where <target> is the platform you have built for and <binary> is the elf output from the toolchain,
     typically main.exe (for tinyos builds)
+
+
+
+
+********************************************************************************
+
+Changelog
+---------
+
+2018-04-08
+    Doc update.  Update ARM toolchain notes.
+
+2017-09-11
+    Ubuntu 16.04, T2 (TinyProd) github:tp-freeforall/prod(tp-master),
+    ARM toolchain, gcc 4.9.3, gdb 7.8.0 (32 bit), python support
+    J-link (Segger), V6.16j (6.16.10)
+
+    T2 (TinyProd) github:tp-freeforall/prod(tp-master),
+    mspdebug JTAG debugging.   4.6.3 based msp430 toolchain
+    Toolchain from http://tinyprod.net/repos/debian (msp430)
+

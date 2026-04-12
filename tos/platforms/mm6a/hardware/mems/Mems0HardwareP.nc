@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Eric B. Decker
+ * Copyright (c) 2017, 2019, 2021 Eric B. Decker
  * All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -90,14 +90,15 @@ implementation {
   }
 
   async command void AccelInt1.enableInterrupt() {
-    call AccelInt1_Port.disable();
-    call AccelInt1_Port.edgeRising();
-    call AccelInt1_Port.clear();
     call AccelInt1_Port.enable();
   }
 
   async command void AccelInt1.disableInterrupt() {
     call AccelInt1_Port.disable();
+  }
+
+  async command void AccelInt1.clearInterrupt() {
+    call AccelInt1_Port.clear();
   }
 
   async command bool AccelInt1.isInterruptEnabled() {
@@ -126,12 +127,18 @@ implementation {
     /* we need to set the correct PU in the main CPU */
     reg0.x.sdo_pu_disc = 1;
     reg0.x.rsvd_01     = LISX_REG0_RSVD_01;
-    call AccelReg.write(LISX_CTRL_REG0);
+    call AccelReg.write(LISX_CTRL_REG0, reg0.bits);
 #endif
   }
 
 
   command error_t PeriphInit.init() {
+    atomic {
+      call AccelInt1_Port.disable();
+      call AccelInt1_Port.edgeRising();   /* could cause an int assertion */
+      call AccelInt1_Port.clear();        /* and make sure that goes away */
+    }
+
     call SpiInit.init();                /* first bring up the mems SPI bus */
     mag_init();                         /* then init the 3 devices */
     gyro_init();

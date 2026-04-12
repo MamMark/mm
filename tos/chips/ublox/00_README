@@ -1,0 +1,89 @@
+This is a tinyos driver for the uBlox based M8 gps chips.  In particular gps
+the Zoe M8.  This driver only supports communications via SPI.
+
+The UART interface is simpler, but has speed issues.  The fastest we can
+run the UART is 115200 due to interrupt overhead constrainsts.  Currently,
+we only support 9600.  The SPI is limited to 5.5 MHz bit clock and 125 kB/s
+byte period.  The SPI interface is significantly simpler to use than the
+UART.
+
+The uBlox chips have a gps_txrdy signal that indicates when data is
+available for the SPI master to pull from the slave.  This functionality
+must be enabled during configuration.  txrdy is used to group bytes
+together for one interrupt.  This amortizes the interrupt cost over
+multiple bytes and keeps the cpu sleeping for longer.  It also cuts down on
+the number of interrupt stacking/destacking operations.
+
+On the other hand, UART messages are full duplex and generate an interrupt
+for each character as they arrive.  While simpler, it costs an interrupt
+stack/destack per byte.
+
+Any byte processing is handled by the low level state machine, see
+ubloxZoeP and the protocol engine ubxProtoP.
+
+Bytes are extracted from the SPI pipe and passed directly to the protocol
+processing engine (ubxProto) and valid bytes are then stored in a buffer
+allocated via buffer slicing (MsgBuf).  Complete messages are handed one
+at a time to upper layer processing, GPSMonitor.
+
+The GPSMonitor is also responsible for higher control functions and the
+main state machine.  The monitor is what knows about the gps state
+(hibernate, awake, low power, etc.).
+
+Largest expected packet received is no larger than xxx bytes (See
+ublox_driver.h).
+
+Following control signals are used for messing with the GPS:
+
+gps_txrdy:    true when the gps has data to be read.
+gps_resetn:   low to reset.
+gps_tm:       1pps pulse.
+
+SPI:
+gps_csn:  gps spi chip select (low true).
+gps_sclk: gps spi clock.
+gps_simo: gps spi rx (slave in, master out), gps_rx
+gps_somi: gps spi tx (slave out, master in), gps_tx
+
+
+GPS configuration:
+
+To enable TxRdy and other functionality configuration messages must first
+be sent to the gps.  This configuration is done once per boot.  After
+modifing the current configuration, we copy the configuration out to
+non-vol flash if present.  This should make the modified configuration
+permanent since the ublox gps will restore this configuration on subsequent
+power ups.  (Note if flash is not present, a subsequent power down or reset
+will cause the current configuration to be lost and the gps subsystem will
+not function correctly until the entire system is rebooted or power
+cycled.  Causing the bootstrap configuration code to be invoked.)
+
+This process looks something like the following:
+
+    o configure underlying hardware
+    o turn gps on and connect pins
+    o delay ~100ms for power up
+    o configure spi port (turns on txrdy)
+    o wait for config ack
+    o verify txrdy configuration
+    o send other configuration commands
+    o poll sw version
+    o verify configuration
+
+The CFG_PRT_SPI_TXRDY message causes the SPI pipeline to be reset.  The
+state machines must handle this case.  A packet that in the process of
+being transmitted to the main cpu can be stopped in the middle and lost.
+
+The bootstrap uses single threaded code that uses the protocol engine
+(ubxProtoP) and buffer slicer (MsgBufP) to capture packets.  Outgoing and
+incoming packets are captured in the SD.  (This code must run after the
+Collector has been initialized).  Packets are processed and released as
+they come in.
+
+While the bootstrap is running, StreamStorage is not writing full buffers
+out to the SD.  If too many packets are queued up, StreamStorage will run
+out of buffers and can panic.  In practice this is not a problem.
+
+So...  We hook the gps initilization into the serialized boot sequence.
+After the system is completely up we use SystemBootC.Boot.booted() to
+start standard gps processing.

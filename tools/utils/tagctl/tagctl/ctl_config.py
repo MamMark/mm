@@ -55,7 +55,7 @@ use the followinging syntax:
       name:  define the name of a logging file.
 
 [messages]
-      define arbitrary sirf messages that can be sent to the gps
+      define arbitrary ubx messages that can be sent to the gps
       (development command).
 
 Verbosity levels:

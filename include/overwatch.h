@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2021, Eric B. Decker
  * Copyright (c) 2017-2019, Daniel J. Maltbie, Eric B. Decker
  * All rights reserved.
  *
@@ -136,6 +137,7 @@ typedef enum {
   ORR_USER_REQUEST,                     /* user requested reboot                 */
   ORR_PANIC,                            /* hem, something blew up                */
   ORR_LOW_PWR,                          /* reboot, switching from low to normal  */
+  ORR_FS_ERASE,                         /* filesystem erasure on boot            */
 } ow_reboot_reason_t;
 
 

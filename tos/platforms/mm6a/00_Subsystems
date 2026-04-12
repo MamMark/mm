@@ -16,7 +16,7 @@ Power Management:
   Solar:
 
   Battery:
-  
+
   Pins:
       P6.2:  pwr_3v3_ena
       P6.4:  solar_ena
@@ -134,34 +134,11 @@ uSD - Storage System
       P9.2:  temp_scl (ucb2scl)
       P10.1: temp_pwr                 (0: off, 1: on)
 
-      P1.3:  usd_access_sense
-      P1.5:  usd_access_ena_n
       P3.6:  usd_clk           (uca1)
       P5.6:  usd_mosi          (uca1)
       P5.7:  usd_miso          (uca1)
       P7.3:  usd_pwr_ena
       P8.2:  usd_csn
-
-*** on the schematic there is a reference to "add sd power sense".  Do
-    we need a sd power sense?  Probably not.
-
-  5438a/uSD access protocol:  When ever the 5438a wants to access the uSD
-  it must follow the following protocol.
-
-  1) drive usd_access_ena_n low.
-
-     if the dock hasn't disabled access, this will drive the OEn of U37 low
-     enabling the 5438a to control the pins of the uSD.
-
-  2) read usd_access_sense.  If the 5438a has control of the uSD then this
-     signal will be low.  If the dock is overriding uSD access then this line
-     will be high.
-
-     [what should the software do if we have been kicked off the uSD?  This
-     should eventually cause the same behaviour as seeing the docked signal]
-
-  3) power the uSD up by asserting usd_pwr_ena
-
 
 
 Dock Interface

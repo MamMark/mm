@@ -33,7 +33,9 @@ from   tagcore.imageinfo_defs import iip_tlv_name
 from   tagcore.imageinfo_defs import IMAGE_INFO_PLUS_SIZE
 from   tagcore.imageinfo_defs import IIP_TLV_END
 
-__version__ = '0.4.7'
+__version__ = '0.4.9.dev0'
+
+# WARNING: all bufs are assumed to be bytearrays
 
 class atom(object):
     '''
@@ -45,7 +47,11 @@ class atom(object):
     '''
     def __init__(self, a_tuple):
         self.s_str = a_tuple[0]
-        self.s_rec = struct.Struct(self.s_str)
+        try:
+            self.s_rec = struct.Struct(self.s_str)
+        except struct.error as e:
+            eprint('atom: struct string {}'.format(self.s_str))
+            raise e
         self.p_str = a_tuple[1]
         if (len(a_tuple) > 2):
             self.f_str = a_tuple[2]
@@ -76,8 +82,10 @@ class atom(object):
         self.val = self.s_rec.unpack(buf[:self.s_rec.size])[0]
         return self.s_rec.size
 
+    # build returns a bytearray.  python 2.7 struct.pack returns str
+    # python 3 struct.pack returns bytes, still want bytearray.
     def build(self):
-        return self.s_rec.pack(self.val)
+        return bytearray(self.s_rec.pack(self.val))
 
 
 class aggie(OrderedDict):
@@ -117,7 +125,7 @@ class aggie(OrderedDict):
         return consumed
 
     def build(self):
-        out = ''
+        out = bytearray()
         for key, v_obj in self.iteritems():
             out += v_obj.build()
         return out
@@ -146,8 +154,10 @@ class tlv_aggie(aggie):
         # tlv_type and tlv_len.  Using tlv_len, we can suck the appropriate
         # number of bytes as tlv_value.
         #
-        tlv_type  = ord(buf[0])
-        tlv_len   = ord(buf[1])
+        if len(buf) < 2:
+            return 0
+        tlv_type  = buf[0]
+        tlv_len   = buf[1]
         tlv_value = buf[2: tlv_len]
         self['tlv_type'].val  = tlv_type
         self['tlv_len'].val   = tlv_len
@@ -177,7 +187,7 @@ class tlv_aggie(aggie):
         return tlv_len
 
     def build(self):
-        out = ''
+        out = bytearray()
         for key, v_obj in self.iteritems():
             out += v_obj.build()
         return out
@@ -199,12 +209,25 @@ class tlv_block_aggie(aggie):
         consumed = super(tlv_block_aggie, self).set(buf)
         tlv_consumed = 0
         while True:
-            if consumed >= len(buf) or buf[consumed] == '\0':
+            # look for end of tlvs.  out of bytes or tlv_type 0
+            if consumed >= len(buf):    # no data
                 break;
+            # should have at least 2 bytes, type/len
+            if len(buf[consumed:]) < 2:
+                raise struct.error('atom: badly formed tlv block')
+
+            # first byte is tlv_type, 2nd tlv_len
             # first, peek, 1st byte tlv_type, 2nd tlv_len
             # we need tlv_len to properly build the tlv_aggie.
-            tlv_type = ord(buf[consumed])
-            tlv_len  = ord(buf[consumed + 1])
+
+            tlv_type = buf[consumed]
+            tlv_len  = buf[consumed + 1]
+            if tlv_len == 0:
+                break
+            if tlv_len <= 2:
+                raise struct.error(
+                    'bad image_info tlv, too short (type: {:d}, len: {:d})'.format(
+                    tlv_type, tlv_len))
             tlv = tlv_aggie(aggie(OrderedDict([
                 ('tlv_type',  atom(('<B', '{}'))),
                 ('tlv_len',   atom(('<B', '{}'))),
@@ -250,14 +273,16 @@ class tlv_block_aggie(aggie):
         return consumed
 
     def get_tlv(self, tlv_type):
-        tlv = self.tlv_blocks[tlv_type]
-        return tlv.value
+        tlv = self.tlv_blocks.get(tlv_type, None)
+        if tlv == None:
+            return None
+        return tlv['tlv_value']
 
     def get_tlv_rows(self):
         return self.tlv_blocks.items()
 
     def build_tlv(self):
-        out = ''
+        out = bytearray()
         for ttype, v_obj in self.tlv_blocks.items():
             if g.debug:
                 eprint('** build_tlv: {} {} {}'.format(ttype, v_obj, type(v_obj)))
@@ -270,7 +295,7 @@ class tlv_block_aggie(aggie):
     def __repr__(self):
         out = super(tlv_block_aggie, self).__repr__()
         for key, v_obj in self.tlv_blocks.items():
-            out += v_obj.__repr__()
+            out += '[' + v_obj.__repr__() + ']'
         return out
 
     def build(self):
